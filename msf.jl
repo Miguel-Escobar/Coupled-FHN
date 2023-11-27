@@ -108,32 +108,27 @@ function synch_is_stable(coupling_matrix; kwargs...)
     return all(msf_for_eigs .≤ 0)
 end
 
-function ring_coupling(size; sigma=1, neighbors=1)
+function ring_coupling(size; neighbors=1)
     coupling_matrix = zeros(size, size)
-    # coupling_matrix[1, end] = 1
-    # coupling_matrix[end, 1] = 1    
+    
     if size > 2*neighbors
         correction = -2*neighbors
     else
         correction = -size + 1
     end
-    # coupling_matrix[1, 1] = correction
-    # coupling_matrix[end, end] = -1
+    
     for i in 1:size
-        if i + neighbors ≤ size
-            coupling_matrix[i, i .+ (1:neighbors)] .+= 1
-            coupling_matrix[i .+ (1:neighbors), i] .+= 1
+        if i + neighbors ≤ size && i - neighbors ≥ 1
+            coupling_matrix[i, (i .+ (1:neighbors))] .+= 1
+            coupling_matrix[i, i .- (1:neighbors)] .+= 1
             coupling_matrix[i, i] = correction
         else
-            wrap = i+neighbors - size
-            coupling_matrix[i, i+1:end] .+= 1
-            coupling_matrix[i, 1:wrap] .+= 1
-            coupling_matrix[i+1:end, i] .+= 1
-            coupling_matrix[1:wrap, i] .+= 1
+            indices = unique([mod(j,1:size) for j in (i .- neighbors):(i .+ neighbors) if j != i])
+            coupling_matrix[i, indices] .+= 1
             coupling_matrix[i, i] = correction
         end
     end
-    return sigma.*coupling_matrix
+    return coupling_matrix
 end
 
 function plot_msf_regions_with_eigs(n_rows, coupling_matrix; savefigure=false, kwargs...)
