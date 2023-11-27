@@ -1,5 +1,6 @@
 using DifferentialEquations
 using StaticArrays
+using Statistics
 
 function fhn_eom(x, params)
     a = params[1]
@@ -18,10 +19,10 @@ function coupled_fhn_eom!(dx, x, a, eps, coupling_strength, coupling_matrix, cou
     eachneuron = reshape(x, (2, N))
     coupling_terms = coupling_jac * eachneuron
     for i in range(1, N)
-        dx_i = fhn_eom(eachneuron[:, i], [a, eps])
-        for j in 1:N
-            dx_i .+= coupling_matrix[i, j] .* coupling_strength .* coupling_terms[:, j]
-        end
+        dx_i = fhn_eom(eachneuron[:, i], [a, eps]) .+ coupling_strength .* sum([coupling_matrix[i, j]  .* coupling_terms[:, j] for j in 1:N])
+        # for j in 1:N
+        #     dx_i .+= coupling_matrix[i, j] .* coupling_strength .* coupling_terms[:, j]
+        # end
         dx[2*i-1:2*i] = dx_i
     end
 end
@@ -49,16 +50,33 @@ function ring_coupling(size; neighbors=1)
     return coupling_matrix
 end
 
-N = 100
+function state_vector_std(reshaped_x, N)
+    return sqrt(var(reshaped_x[1, :]) + var(reshaped_x[2, :]))
+end
+
+function std_time_series(sol, N)
+    t_values = sol.t
+    x_values = sol.u
+    std_values = zeros(length(t_values))
+    for i in 1:length(t_values)
+        eachneuron = reshape(x_values[i], (2, N))
+        std_values[i] = state_vector_std(eachneuron, N)
+    end
+    return t_values, std_values
+end
+
+N = 12
 eps = 0.05
 a = 0.5
 b = bmatrix(pi/2-0.1, eps)
-c = 1
-G = ring_coupling(N; neighbors=1)
+c = 1/12
+G = ring_coupling(N; neighbors=3)
 x_0 = zeros(2*N)
 x_0[1] = 0.1
 prob = ODEProblem((dx, x, params, t) -> coupled_fhn_eom!(dx, x, params[1], params[2], params[3], G, b), x_0, (0.0, 100.0), [a, eps, c])
 alg = Tsit5()
-sol = solve(prob, alg)
-# using Plots, LaTeXStrings
+sol = solve(prob, alg; dtmax=0.01)
+using Plots
 # plot(sol, xlabel="Time", ylabel="System Variables", dpi=600)
+t_val, std_val = std_time_series(sol, N)
+plot(t_val, std_val)
