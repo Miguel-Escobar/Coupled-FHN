@@ -50,6 +50,28 @@ function ring_coupling(size; neighbors=1)
     return coupling_matrix
 end
 
+
+function wattsstrogatzmatrix(size, neighbors, rewiring_prob)
+    coupling_matrix = ring_coupling(size; neighbors=neighbors)
+    for i in 1:size
+        for j in i:size
+            if coupling_matrix[i, j] == 1
+                if rand() < rewiring_prob
+                    coupling_matrix[i, j] = 0
+                    rand_index = rand(1:size)
+                    while rand_index == i || coupling_matrix[i, rand_index] == 1
+                        rand_index = rand(1:size)
+                    end
+                    coupling_matrix[i, rand_index] = 1
+                    coupling_matrix[rand_index, i] = 1
+                end
+            end
+        end
+    end
+    return coupling_matrix
+end
+
+
 function state_vector_std(reshaped_x, N)
     return sqrt(var(reshaped_x[1, :]) + var(reshaped_x[2, :]))
 end
@@ -65,15 +87,15 @@ function std_time_series(sol, N)
     return t_values, std_values
 end
 
-N = 12
+N = 90
 eps = 0.05
 a = 0.5
 b = bmatrix(pi/2-0.1, eps)
-c = 1/12
-G = ring_coupling(N; neighbors=3)
+σ = 0.0506
+G = wattsstrogatzmatrix(N, 3, 0.232)
 x_0 = zeros(2*N)
-x_0[1] = 0.1
-prob = ODEProblem((dx, x, params, t) -> coupled_fhn_eom!(dx, x, params[1], params[2], params[3], G, b), x_0, (0.0, 100.0), [a, eps, c])
+x_0[1:2] .+= 0.1
+prob = ODEProblem((dx, x, params, t) -> coupled_fhn_eom!(dx, x, params[1], params[2], params[3], G, b), x_0, (0.0, 100.0), [a, eps, σ])
 alg = Tsit5()
 sol = solve(prob, alg; dtmax=0.01)
 using Plots
