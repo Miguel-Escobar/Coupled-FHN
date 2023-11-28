@@ -72,26 +72,39 @@ function wattsstrogatzmatrix(size, neighbors, rewiring_prob)
 end
 
 
-function state_vector_std(reshaped_x, N)
+function state_vector_std(reshaped_x)
     return sqrt(var(reshaped_x[1, :]) + var(reshaped_x[2, :]))
 end
 
-function std_time_series(sol, N)
+function std_time_series(sol)
     t_values = sol.t
     x_values = sol.u
     std_values = zeros(length(t_values))
     for i in 1:length(t_values)
         eachneuron = reshape(x_values[i], (2, N))
-        std_values[i] = state_vector_std(eachneuron, N)
+        std_values[i] = state_vector_std(eachneuron)
     end
     return t_values, std_values
 end
 
-N = 90
+function kuramoto_time_series(sol, N)
+    t_values = sol.t
+    x_values = sol.u
+    kuramoto_values = zeros(length(t_values))
+    for i in 1:length(t_values)
+        eachneuron = reshape(x_values[i], (2, N))
+        eachangle = atan.(eachneuron[2, :], eachneuron[1, :])
+        kuramoto = mean(exp.(im .* eachangle))
+        kuramoto_values[i] = abs(kuramoto)
+    end
+    return t_values, kuramoto_values
+end
+
+N = 2
 eps = 0.05
 a = 0.5
 b = bmatrix(pi/2-0.1, eps)
-σ = 0.0506
+σ = 1#0.0506
 G = wattsstrogatzmatrix(N, 3, 0.232)
 x_0 = zeros(2*N)
 x_0[1:2] .+= 0.1
@@ -99,6 +112,6 @@ prob = ODEProblem((dx, x, params, t) -> coupled_fhn_eom!(dx, x, params[1], param
 alg = Tsit5()
 sol = solve(prob, alg; dtmax=0.01)
 using Plots
-# plot(sol, xlabel="Time", ylabel="System Variables", dpi=600)
-t_val, std_val = std_time_series(sol, N)
-plot(t_val, std_val)
+plot(sol, xlabel="Time", ylabel="System Variables", dpi=600)
+t_val, kuramoto_val = kuramoto_time_series(sol, N)
+plot(t_val, kuramoto_val)
