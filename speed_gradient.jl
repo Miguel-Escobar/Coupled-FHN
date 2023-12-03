@@ -20,9 +20,32 @@ function coupled_fhn_eom!(dx, x, a, eps, coupling_strength, coupling_matrix, cou
     coupling_terms = coupling_jac * eachneuron
     for i in range(1, N)
         dx_i = fhn_eom(eachneuron[:, i], [a, eps]) .+ coupling_strength .* sum([coupling_matrix[i, j]  .* coupling_terms[:, j] for j in 1:N])
-        # for j in 1:N
-        #     dx_i .+= coupling_matrix[i, j] .* coupling_strength .* coupling_terms[:, j]
-        # end
+        dx[2*i-1:2*i] = dx_i
+    end
+end
+
+function control(each_neuron, coupling_matrix, coupling_terms)
+    N = length(coupling_matrix[1, :])
+    coupling_strength = 0
+    for i in range(1, N)
+        for j in range(1, N)
+            for k in range(1, N)
+                coupling_strength += 2 * (each_neuron[1, i] - each_neuron[1, j]) * coupling_matrix[i, j] * coupling_terms[1, k]
+            end
+        end
+    end
+    println(coupling_strength)
+    return -coupling_strength
+end
+
+function coupled_controlled_fhn_eom!(dx, x, a, eps, coupling_matrix, coupling_jac)
+    N = length(coupling_matrix[1, :])
+    eachneuron = reshape(x, (2, N))
+    coupling_terms = coupling_jac * eachneuron
+    coupling_strength = control(eachneuron, coupling_matrix, coupling_terms)
+
+    for i in range(1, N)
+        dx_i = fhn_eom(eachneuron[:, i], [a, eps]) .+ coupling_strength .* sum([coupling_matrix[i, j]  .* coupling_terms[:, j] for j in 1:N])
         dx[2*i-1:2*i] = dx_i
     end
 end
@@ -100,18 +123,29 @@ function kuramoto_time_series(sol, N)
     return t_values, kuramoto_values
 end
 
-N = 90
+N = 12
 eps = 0.05
 a = 0.5
 b = bmatrix(pi/2-0.1, eps)
 σ = 0.0506
-G = wattsstrogatzmatrix(N, 3, 0.232)
+G = ring_coupling(N)#wattsstrogatzmatrix(N, 3, 0.232)
 x_0 = zeros(2*N)
 x_0[1:2] .+= 0.1
-prob = ODEProblem((dx, x, params, t) -> coupled_fhn_eom!(dx, x, params[1], params[2], params[3], G, b), x_0, (0.0, 200.0), [a, eps, σ])
+prob = ODEProblem((dx, x, params, t) -> coupled_fhn_eom!(dx, x, params[1], params[2], params[3], G, b), x_0, (0.0, 25.0), [a, eps, σ])
 alg = Tsit5()
 sol = solve(prob, alg)
+
+new_x_0 = sol.u[end]
+controlled_prob = ODEProblem((dx, x, params, t) -> coupled_controlled_fhn_eom!(dx, x, params[1], params[2], G, b), new_x_0, (0.0, 2000.0), [a, eps])
+controlled_sol = solve(controlled_prob, alg)
+
+uncontrolled_prob = ODEProblem((dx, x, params, t) -> coupled_fhn_eom!(dx, x, params[1], params[2], params[3], G, b), new_x_0, (0.0, 2000.0), [a, eps, σ])
+uncontrolled_sol = solve(uncontrolled_prob, alg)
+
 using Plots
-plot(sol, xlabel="Time", ylabel="System Variables", dpi=600)
-t_val, kuramoto_val = kuramoto_time_series(sol, N)
-plot(t_val, kuramoto_val)
+#plot(new_sol, xlabel="Time", ylabel="System Variables", dpi=600)
+controlled_t_val, controlled_kuramoto_val = kuramoto_time_series(controlled_sol, N)
+uncontrolled_t_val, uncontrolled_kuramoto_val = kuramoto_time_series(uncontrolled_sol, N)
+plot(uncontrolled_t_val, uncontrolled_kuramoto_val, label="Uncontrolled", xlabel="Time", ylabel="Kuramoto Order Parameter", dpi=600)
+plot!(controlled_t_val, controlled_kuramoto_val, label="Controlled", xlabel="Time", ylabel="Kuramoto Order Parameter", dpi=600)
+

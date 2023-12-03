@@ -185,3 +185,6 @@ function get_crit_coupling(coupling_matrix)
     end
     return coupling - 0.005
 end
+
+function msf_phi_reals(start, finish, n_steps, coupling_matrix)
+    
