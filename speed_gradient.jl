@@ -30,20 +30,18 @@ function control(each_neuron, coupling_matrix, coupling_terms)
     for i in range(1, N)
         for j in range(1, N)
             for k in range(1, N)
-                coupling_strength += 2 * (each_neuron[1, i] - each_neuron[1, j]) * coupling_matrix[i, j] * coupling_terms[1, k]
+                coupling_strength += (each_neuron[1, i] - each_neuron[1, j]) * coupling_matrix[i, k] * coupling_terms[1, k]
             end
         end
     end
-    println(coupling_strength)
-    return -coupling_strength
+    return -2 * coupling_strength
 end
 
-function coupled_controlled_fhn_eom!(dx, x, a, eps, coupling_matrix, coupling_jac)
+function coupled_controlled_fhn_eom!(dx, x, a, eps, σ, coupling_matrix, coupling_jac)
     N = length(coupling_matrix[1, :])
     eachneuron = reshape(x, (2, N))
     coupling_terms = coupling_jac * eachneuron
     coupling_strength = control(eachneuron, coupling_matrix, coupling_terms)
-
     for i in range(1, N)
         dx_i = fhn_eom(eachneuron[:, i], [a, eps]) .+ coupling_strength .* sum([coupling_matrix[i, j]  .* coupling_terms[:, j] for j in 1:N])
         dx[2*i-1:2*i] = dx_i
@@ -52,7 +50,6 @@ end
 
 function ring_coupling(size; neighbors=1)
     coupling_matrix = zeros(size, size)
-    
     if size > 2*neighbors
         correction = -2*neighbors
     else
@@ -110,6 +107,32 @@ function std_time_series(sol)
     return t_values, std_values
 end
 
+function goal_function(eachneuron)
+    goal = 0
+    for i in 1:length(eachneuron[1,:])
+        for j in 1:length(eachneuron[1, :])
+            goal += (eachneuron[1, i] - eachneuron[1, j])^2
+        end
+    end
+    return 0.5*goal
+end
+
+function control_and_goal_time_series(sol, coupling_matrix, coupling_jac)
+    t_values = sol.t
+    x_values = sol.u
+    control_values = zeros(length(t_values))
+    goal_values = zeros(length(t_values))
+    for i in 1:length(t_values)
+        eachneuron = reshape(x_values[i], (2, N))
+        coupling_terms = coupling_jac * eachneuron
+        control_values[i] = control(eachneuron, coupling_matrix, coupling_terms)
+        goal_values[i] = goal_function(eachneuron)
+    end
+    return t_values, control_values, goal_values
+end
+
+
+
 function kuramoto_time_series(sol, N)
     t_values = sol.t
     x_values = sol.u
@@ -123,12 +146,12 @@ function kuramoto_time_series(sol, N)
     return t_values, kuramoto_values
 end
 
-N = 12
+N = 90
 eps = 0.05
 a = 0.5
 b = bmatrix(pi/2-0.1, eps)
 σ = 0.0506
-G = ring_coupling(N)#wattsstrogatzmatrix(N, 3, 0.232)
+G = wattsstrogatzmatrix(N, 3, 0.232) # ring_coupling(N) #
 x_0 = zeros(2*N)
 x_0[1:2] .+= 0.1
 prob = ODEProblem((dx, x, params, t) -> coupled_fhn_eom!(dx, x, params[1], params[2], params[3], G, b), x_0, (0.0, 25.0), [a, eps, σ])
@@ -136,16 +159,27 @@ alg = Tsit5()
 sol = solve(prob, alg)
 
 new_x_0 = sol.u[end]
-controlled_prob = ODEProblem((dx, x, params, t) -> coupled_controlled_fhn_eom!(dx, x, params[1], params[2], G, b), new_x_0, (0.0, 2000.0), [a, eps])
+controlled_prob = ODEProblem((dx, x, params, t) -> coupled_controlled_fhn_eom!(dx, x, params[1], params[2], params[3], G, b), new_x_0, (0.0, 100.0), [a, eps, σ])
 controlled_sol = solve(controlled_prob, alg)
 
-uncontrolled_prob = ODEProblem((dx, x, params, t) -> coupled_fhn_eom!(dx, x, params[1], params[2], params[3], G, b), new_x_0, (0.0, 2000.0), [a, eps, σ])
+uncontrolled_prob = ODEProblem((dx, x, params, t) -> coupled_fhn_eom!(dx, x, params[1], params[2], params[3], G, b), new_x_0, (0.0, 100.0), [a, eps, σ])
 uncontrolled_sol = solve(uncontrolled_prob, alg)
 
 using Plots
 #plot(new_sol, xlabel="Time", ylabel="System Variables", dpi=600)
 controlled_t_val, controlled_kuramoto_val = kuramoto_time_series(controlled_sol, N)
 uncontrolled_t_val, uncontrolled_kuramoto_val = kuramoto_time_series(uncontrolled_sol, N)
-plot(uncontrolled_t_val, uncontrolled_kuramoto_val, label="Uncontrolled", xlabel="Time", ylabel="Kuramoto Order Parameter", dpi=600)
-plot!(controlled_t_val, controlled_kuramoto_val, label="Controlled", xlabel="Time", ylabel="Kuramoto Order Parameter", dpi=600)
+_, control_values, goal_values = control_and_goal_time_series(controlled_sol, G, b)
+l = @layout [a  b ; c]
+p1 = plot(uncontrolled_t_val, uncontrolled_kuramoto_val, label="Uncontrolled", xlabel="Time", ylabel="Kuramoto", dpi=600)
+plot!(p1, controlled_t_val, controlled_kuramoto_val, label="Controlled", xlabel="Time", ylabel="Kuramoto", dpi=600)
+p2 = plot(controlled_t_val, control_values, xlabel="Time", ylabel="Control", dpi=600)
+p3 = plot(controlled_t_val, goal_values, xlabel="Time", ylabel="Goal", dpi=600)
+
+p = plot(p1, p2, p3, layout=l)
+
+system_vars = plot(controlled_sol, xlabel="Time", ylabel="System Variables", dpi=600, legend=false)
+
+display(p)
+display(system_vars)
 
