@@ -2,6 +2,16 @@ using DifferentialEquations
 using StaticArrays
 using Statistics
 
+"""
+FitzHugh-Nagumo model equations.
+
+Parameters:
+    - `x`: 1D array, state variables [voltage, recovery variable]
+    - `params`: 1D array, model parameters [a, epsilon]
+
+Returns:
+    - 1D array, derivatives [dv/dt, du/dt]
+"""
 function fhn_eom(x, params)
     a = params[1]
     eps = params[2]
@@ -14,6 +24,19 @@ function bmatrix(phi, eps)
     return [cos(phi)/eps sin(phi)/eps; -sin(phi) cos(phi)]
 end
 
+
+"""
+FitzHugh-Nagumo model equations for a coupled system without control.
+
+Parameters:
+    - `dx`: 1D array, output for derivatives
+    - `x`: 1D array, state variables
+    - `a`: Float64, model parameter
+    - `eps`: Float64, model parameter
+    - `coupling_strength`: Float64
+    - `coupling_matrix`: 2D array, the connectivity matrix, with the diagonal elements being the negative of the sum of the other elements in the row
+    - `coupling_jac`: 2D array, coupling function Jacobian matrix.
+"""
 function coupled_fhn_eom!(dx, x, a, eps, coupling_strength, coupling_matrix, coupling_jac) # not controlled
     N = length(coupling_matrix[1, :])
     eachneuron = reshape(x, (2, N))
@@ -24,7 +47,20 @@ function coupled_fhn_eom!(dx, x, a, eps, coupling_strength, coupling_matrix, cou
     end
 end
 
-function control(each_neuron, coupling_matrix, coupling_terms)
+
+"""
+Calculate the control signal for a coupled system.
+
+Parameters:
+    - `gain`: Float64, control gain
+    - `each_neuron`: 2D array, state variables of each neuron
+    - `coupling_matrix`: 2D array, coupling structure
+    - `coupling_terms`: 2D array, coupling terms
+
+Returns:
+    - Float64, control signal
+"""
+function control(gain, each_neuron, coupling_matrix, coupling_terms)
     N = length(coupling_matrix[1, :])
     coupling_strength = 0
     for i in range(1, N)
@@ -35,20 +71,43 @@ function control(each_neuron, coupling_matrix, coupling_terms)
             end
         end
     end
-    return 2 * coupling_strength
+    return gain * 2 * coupling_strength
 end
 
-function coupled_controlled_fhn_eom!(dx, x, a, eps, σ, coupling_matrix, coupling_jac)
+"""
+FitzHugh-Nagumo model equations for a coupled system with control.
+
+Parameters:
+    - `dx`: 1D array, output for derivatives
+    - `x`: 1D array, state variables
+    - `a`: Float64, model parameter
+    - `eps`: Float64, model parameter
+    - `σ`: Float64, external control signal
+    - `control_gain`: Float64, for speed gradient algorithm
+    - `coupling_matrix`: 2D array, coupling structure
+    - `coupling_jac`: 2D array, coupling Jacobian matrix
+"""
+function coupled_controlled_fhn_eom!(dx, x, a, eps, σ, control_gain, coupling_matrix, coupling_jac)
     N = length(coupling_matrix[1, :])
     eachneuron = reshape(x, (2, N))
     coupling_terms = coupling_jac * eachneuron
-    coupling_strength = control(eachneuron, coupling_matrix, coupling_terms)
+    coupling_strength = control(control_gain, eachneuron, coupling_matrix, coupling_terms) + σ
     for i in range(1, N)
         dx_i = fhn_eom(eachneuron[:, i], [a, eps]) .+ coupling_strength .* sum([coupling_matrix[i, j]  .* coupling_terms[:, j] for j in 1:N])
         dx[2*i-1:2*i] = dx_i
     end
 end
 
+"""
+Generate a coupling matrix for a ring network.
+
+Parameters:
+    - `size`: Int, number of neurons
+    - `neighbors`: Int, number of neighbors to connect to each side (node degree = 2*neighbors)
+
+Returns:
+    - 2D array, coupling matrix
+"""
 function ring_coupling(size; neighbors=1)
     coupling_matrix = zeros(size, size)
     if size > 2*neighbors
@@ -72,6 +131,17 @@ function ring_coupling(size; neighbors=1)
 end
 
 
+"""
+Generate a Watts-Strogatz small-world network coupling matrix.
+
+Parameters:
+    - `size`: Int, number of neurons
+    - `neighbors`: Int, number of neighbors to connect initially to each side (node degree = 2*neighbors)
+    - `rewiring_prob`: Float64, probability of rewiring an edge
+
+Returns:
+    - 2D array, coupling matrix
+"""
 function wattsstrogatzmatrix(size, neighbors, rewiring_prob)
     coupling_matrix = ring_coupling(size; neighbors=neighbors)
     for i in 1:size
@@ -93,9 +163,19 @@ function wattsstrogatzmatrix(size, neighbors, rewiring_prob)
 end
 
 
+"""
+Calculate the standard deviation of the state variables across neurons.
+
+Parameters:
+    - `reshaped_x`: 2D array, reshaped state variables
+
+Returns:
+    - Float64, standard deviation
+"""
 function state_vector_std(reshaped_x)
     return sqrt(var(reshaped_x[1, :]) + var(reshaped_x[2, :]))
 end
+
 
 function std_time_series(sol)
     t_values = sol.t
@@ -147,11 +227,12 @@ function kuramoto_time_series(sol, N)
     return t_values, kuramoto_values
 end
 
-N = 5
+N = 90
 eps = 0.05
 a = 0.5
 b = bmatrix(pi/2-0.1, eps)
-σ = 0.0506
+σ = 0.0506 # Coupling strength
+γ = 0.01 # Control gain
 G = ring_coupling(N; neighbors=2) # wattsstrogatzmatrix(N, 2, 0.232) #
 x_0 = zeros(2*N)
 x_0[1:2] .+= 0.1
@@ -160,7 +241,7 @@ alg = Tsit5()
 sol = solve(prob, alg)
 
 new_x_0 = sol.u[end]
-controlled_prob = ODEProblem((dx, x, params, t) -> coupled_controlled_fhn_eom!(dx, x, params[1], params[2], params[3], G, b), new_x_0, (0.0, 100.0), [a, eps, σ])
+controlled_prob = ODEProblem((dx, x, params, t) -> coupled_controlled_fhn_eom!(dx, x, params[1], params[2], params[3], params[4], G, b), new_x_0, (0.0, 100.0), [a, eps, σ, γ])
 controlled_sol = solve(controlled_prob, alg)
 
 uncontrolled_prob = ODEProblem((dx, x, params, t) -> coupled_fhn_eom!(dx, x, params[1], params[2], params[3], G, b), new_x_0, (0.0, 100.0), [a, eps, σ])
