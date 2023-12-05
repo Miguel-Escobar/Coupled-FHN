@@ -20,9 +20,6 @@ function coupled_fhn_eom!(dx, x, a, eps, coupling_strength, coupling_matrix, cou
     coupling_terms = coupling_jac * eachneuron
     for i in range(1, N)
         dx_i = fhn_eom(eachneuron[:, i], [a, eps]) .+ coupling_strength .* sum([coupling_matrix[i, j]  .* coupling_terms[:, j] for j in 1:N])
-        # for j in 1:N
-        #     dx_i .+= coupling_matrix[i, j] .* coupling_strength .* coupling_terms[:, j]
-        # end
         dx[2*i-1:2*i] = dx_i
     end
 end

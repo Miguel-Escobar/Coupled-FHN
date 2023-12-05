@@ -31,10 +31,11 @@ function control(each_neuron, coupling_matrix, coupling_terms)
         for j in range(1, N)
             for k in range(1, N)
                 coupling_strength += (each_neuron[1, i] - each_neuron[1, j]) * coupling_matrix[i, k] * coupling_terms[1, k]
+                coupling_strength += (each_neuron[2, i] - each_neuron[2, j]) * coupling_matrix[i, k] * coupling_terms[2, k]
             end
         end
     end
-    return -2 * coupling_strength
+    return 2 * coupling_strength
 end
 
 function coupled_controlled_fhn_eom!(dx, x, a, eps, σ, coupling_matrix, coupling_jac)
@@ -111,7 +112,7 @@ function goal_function(eachneuron)
     goal = 0
     for i in 1:length(eachneuron[1,:])
         for j in 1:length(eachneuron[1, :])
-            goal += (eachneuron[1, i] - eachneuron[1, j])^2
+            goal += (eachneuron[1, i] - eachneuron[1, j])^2 + (eachneuron[2, i] - eachneuron[2, j])^2
         end
     end
     return 0.5*goal
@@ -146,12 +147,12 @@ function kuramoto_time_series(sol, N)
     return t_values, kuramoto_values
 end
 
-N = 90
+N = 5
 eps = 0.05
 a = 0.5
 b = bmatrix(pi/2-0.1, eps)
 σ = 0.0506
-G = wattsstrogatzmatrix(N, 3, 0.232) # ring_coupling(N) #
+G = ring_coupling(N; neighbors=2) # wattsstrogatzmatrix(N, 2, 0.232) #
 x_0 = zeros(2*N)
 x_0[1:2] .+= 0.1
 prob = ODEProblem((dx, x, params, t) -> coupled_fhn_eom!(dx, x, params[1], params[2], params[3], G, b), x_0, (0.0, 25.0), [a, eps, σ])
@@ -176,10 +177,10 @@ plot!(p1, controlled_t_val, controlled_kuramoto_val, label="Controlled", xlabel=
 p2 = plot(controlled_t_val, control_values, xlabel="Time", ylabel="Control", dpi=600)
 p3 = plot(controlled_t_val, goal_values, xlabel="Time", ylabel="Goal", dpi=600)
 
-p = plot(p1, p2, p3, layout=l)
+observables = plot(p1, p2, p3, layout=l)
 
 system_vars = plot(controlled_sol, xlabel="Time", ylabel="System Variables", dpi=600, legend=false)
 
-display(p)
+display(observables)
 display(system_vars)
 
