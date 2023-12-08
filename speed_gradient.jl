@@ -49,13 +49,13 @@ end
 
 
 """
-Calculate the control signal for a coupled system.
+Calculate the control function for a the coupled neuron system.
 
 Parameters:
     - `gain`: Float64, control gain
     - `each_neuron`: 2D array, state variables of each neuron
     - `coupling_matrix`: 2D array, coupling structure
-    - `coupling_terms`: 2D array, coupling terms
+    - `coupling_terms`: 2D array, coupling terms (given by the coupling Jacobian matrix times the state variables)
 
 Returns:
     - Float64, control signal
@@ -71,7 +71,7 @@ function control(gain, each_neuron, coupling_matrix, coupling_terms)
             end
         end
     end
-    return gain * 2 * coupling_strength
+    return gain * coupling_strength
 end
 
 """
@@ -91,9 +91,9 @@ function coupled_controlled_fhn_eom!(dx, x, a, eps, σ, control_gain, coupling_m
     N = length(coupling_matrix[1, :])
     eachneuron = reshape(x, (2, N))
     coupling_terms = coupling_jac * eachneuron
-    coupling_strength = control(control_gain, eachneuron, coupling_matrix, coupling_terms) + σ
+    coupling_strength = control(control_gain, eachneuron, coupling_matrix, coupling_terms) #+ σ
     for i in range(1, N)
-        dx_i = fhn_eom(eachneuron[:, i], [a, eps]) .+ coupling_strength .* sum([coupling_matrix[i, j]  .* coupling_terms[:, j] for j in 1:N])
+        dx_i = fhn_eom(eachneuron[:, i], [a, eps]) .+ coupling_strength .* sum([coupling_matrix[i, j] .* coupling_terms[:, j] for j in 1:N])
         dx[2*i-1:2*i] = dx_i
     end
 end
@@ -198,7 +198,7 @@ function goal_function(eachneuron)
     return 0.5*goal
 end
 
-function control_and_goal_time_series(sol, coupling_matrix, coupling_jac)
+function control_and_goal_time_series(sol, gain, coupling_matrix, coupling_jac)
     t_values = sol.t
     x_values = sol.u
     control_values = zeros(length(t_values))
@@ -206,7 +206,7 @@ function control_and_goal_time_series(sol, coupling_matrix, coupling_jac)
     for i in 1:length(t_values)
         eachneuron = reshape(x_values[i], (2, N))
         coupling_terms = coupling_jac * eachneuron
-        control_values[i] = control(eachneuron, coupling_matrix, coupling_terms)
+        control_values[i] = control(gain, eachneuron, coupling_matrix, coupling_terms)
         goal_values[i] = goal_function(eachneuron)
     end
     return t_values, control_values, goal_values
@@ -227,15 +227,15 @@ function kuramoto_time_series(sol, N)
     return t_values, kuramoto_values
 end
 
-N = 90
+N = 20
 eps = 0.05
 a = 0.5
 b = bmatrix(pi/2-0.1, eps)
 σ = 0.0506 # Coupling strength
-γ = 0.01 # Control gain
+γ = abs(σ) # Control gain
 G = ring_coupling(N; neighbors=2) # wattsstrogatzmatrix(N, 2, 0.232) #
 x_0 = zeros(2*N)
-x_0[1:2] .+= 0.1
+x_0[1:2] .+= 1
 prob = ODEProblem((dx, x, params, t) -> coupled_fhn_eom!(dx, x, params[1], params[2], params[3], G, b), x_0, (0.0, 25.0), [a, eps, σ])
 alg = Tsit5()
 sol = solve(prob, alg)
@@ -251,17 +251,26 @@ using Plots
 #plot(new_sol, xlabel="Time", ylabel="System Variables", dpi=600)
 controlled_t_val, controlled_kuramoto_val = kuramoto_time_series(controlled_sol, N)
 uncontrolled_t_val, uncontrolled_kuramoto_val = kuramoto_time_series(uncontrolled_sol, N)
-_, control_values, goal_values = control_and_goal_time_series(controlled_sol, G, b)
+_, control_values, goal_values = control_and_goal_time_series(controlled_sol, γ, G, b)
 l = @layout [a  b ; c]
 p1 = plot(uncontrolled_t_val, uncontrolled_kuramoto_val, label="Uncontrolled", xlabel="Time", ylabel="Kuramoto", dpi=600)
 plot!(p1, controlled_t_val, controlled_kuramoto_val, label="Controlled", xlabel="Time", ylabel="Kuramoto", dpi=600)
 p2 = plot(controlled_t_val, control_values, xlabel="Time", ylabel="Control", dpi=600)
 p3 = plot(controlled_t_val, goal_values, xlabel="Time", ylabel="Goal", dpi=600)
 
-observables = plot(p1, p2, p3, layout=l)
+observables = plot(p3, p2, p1, layout=l)
 
 system_vars = plot(controlled_sol, xlabel="Time", ylabel="System Variables", dpi=600, legend=false)
 
-display(observables)
-display(system_vars)
+uncontrolled_vars = plot(uncontrolled_sol, xlabel="Time", ylabel="System Variables", dpi=600, legend=false)
 
+savefig(observables, "control_observables.png")
+savefig(system_vars, "control_system_vars.png")
+savefig(uncontrolled_vars, "uncontrolled_system_vars.png")
+
+
+# Todo esto está funcionando para acoples tipo anillo, incluso anillos no-locales (vecinos > 1). Para acoples tipo small-world, no funciona. Podría intentar
+# arreglarlo si aplico un control que sincroniza a 2 neuronas particularmente importantes. Según el paper, esto puede sincronizar los sistemas. Como las small-world
+# que tengo son aleatorias, necesitaría pensar un criterio para seleccionar 2 neuronas que me asegure que están directamente conectadas, y poder aplicarle el control
+# sólo a esas. Es novedoso que este método es otra estrategia de control, aparte del pinning control que parece estar más esparcido en la literatura. El hecho de que
+# este método esté funcionando para acoples no locales abre las puertas al control de estados quimera, algo interesante por explorar.
