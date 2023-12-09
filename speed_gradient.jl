@@ -227,15 +227,15 @@ function kuramoto_time_series(sol, N)
     return t_values, kuramoto_values
 end
 
-N = 20
+N = 12
 eps = 0.05
 a = 0.5
 b = bmatrix(pi/2-0.1, eps)
-σ = 0.0506 # Coupling strength
+σ = 1/N #0.0506 # Coupling strength
 γ = abs(σ) # Control gain
-G = ring_coupling(N; neighbors=2) # wattsstrogatzmatrix(N, 2, 0.232) #
+G = ring_coupling(N; neighbors=1) # wattsstrogatzmatrix(N, 2, 0.232) #
 x_0 = zeros(2*N)
-x_0[1:2] .+= 1
+x_0[1:2] .+= 0.1
 prob = ODEProblem((dx, x, params, t) -> coupled_fhn_eom!(dx, x, params[1], params[2], params[3], G, b), x_0, (0.0, 25.0), [a, eps, σ])
 alg = Tsit5()
 sol = solve(prob, alg)
@@ -258,7 +258,7 @@ plot!(p1, controlled_t_val, controlled_kuramoto_val, label="Controlled", xlabel=
 p2 = plot(controlled_t_val, control_values, xlabel="Time", ylabel="Control", dpi=600)
 p3 = plot(controlled_t_val, goal_values, xlabel="Time", ylabel="Goal", dpi=600)
 
-observables = plot(p3, p2, p1, layout=l)
+observables = plot(p3, p2, p1, layout=l, size=(450, 300), dpi=600)
 
 system_vars = plot(controlled_sol, xlabel="Time", ylabel="System Variables", dpi=600, legend=false)
 
