@@ -153,6 +153,7 @@ function wattsstrogatzmatrix(size, neighbors, rewiring_prob)
                         rand_index = rand(1:size)
                     end
                     coupling_matrix[i, j] = 0
+                    coupling_matrix[j, i] = 0
                     coupling_matrix[i, rand_index] = 1
                     coupling_matrix[rand_index, i] = 1
                 end

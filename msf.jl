@@ -131,6 +131,27 @@ function ring_coupling(size; neighbors=1)
     return coupling_matrix
 end
 
+function wattsstrogatzmatrix(size, neighbors, rewiring_prob)
+    coupling_matrix = ring_coupling(size; neighbors=neighbors)
+    for i in 1:size
+        for j in i:size
+            if coupling_matrix[i, j] == 1
+                if rand() < rewiring_prob
+                    rand_index = rand(1:size)
+                    while rand_index == i || coupling_matrix[i, rand_index] == 1
+                        rand_index = rand(1:size)
+                    end
+                    coupling_matrix[i, j] = 0
+                    coupling_matrix[j, i] = 0
+                    coupling_matrix[i, rand_index] = 1
+                    coupling_matrix[rand_index, i] = 1
+                end
+            end
+        end
+    end
+    return coupling_matrix
+end
+
 function plot_msf_regions_with_eigs(n_rows, coupling_matrix; savefigure=false, kwargs...)
     alpha_sweep = range(-1.5, 0.5, length=n_rows)
     beta_sweep = range(-0.5, 0.5, length=n_rows)
