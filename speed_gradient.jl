@@ -2,51 +2,9 @@ using DifferentialEquations
 using StaticArrays
 using Statistics
 
-"""
-FitzHugh-Nagumo model equations.
-
-Parameters:
-    - `x`: 1D array, state variables [voltage, recovery variable]
-    - `params`: 1D array, model parameters [a, epsilon]
-
-Returns:
-    - 1D array, derivatives [dv/dt, du/dt]
-"""
-function fhn_eom(x, params)
-    a = params[1]
-    eps = params[2]
-    dx = (x[1] - (x[1]^3)/3 - x[2])/eps
-    dy = x[1] + a
-    return [dx, dy]
-end
-
-function bmatrix(phi, eps)
-    return [cos(phi)/eps sin(phi)/eps; -sin(phi) cos(phi)]
-end
-
-
-"""
-FitzHugh-Nagumo model equations for a coupled system without control.
-
-Parameters:
-    - `dx`: 1D array, output for derivatives
-    - `x`: 1D array, state variables
-    - `a`: Float64, model parameter
-    - `eps`: Float64, model parameter
-    - `coupling_strength`: Float64
-    - `coupling_matrix`: 2D array, the connectivity matrix, with the diagonal elements being the negative of the sum of the other elements in the row
-    - `coupling_jac`: 2D array, coupling function Jacobian matrix.
-"""
-function coupled_fhn_eom!(dx, x, a, eps, coupling_strength, coupling_matrix, coupling_jac) # not controlled
-    N = length(coupling_matrix[1, :])
-    eachneuron = reshape(x, (2, N))
-    coupling_terms = coupling_jac * eachneuron
-    for i in range(1, N)
-        dx_i = fhn_eom(eachneuron[:, i], [a, eps]) .+ coupling_strength .* sum([coupling_matrix[i, j]  .* coupling_terms[:, j] for j in 1:N])
-        dx[2*i-1:2*i] = dx_i
-    end
-end
-
+include("network_simulation.jl")
+include("network_matrices_creation.jl")
+include("network_sol_analysis.jl")
 
 """
 Calculate the control function for a the coupled neuron system.
@@ -98,96 +56,6 @@ function coupled_controlled_fhn_eom!(dx, x, a, eps, σ, control_gain, coupling_m
     end
 end
 
-"""
-Generate a coupling matrix for a ring network.
-
-Parameters:
-    - `size`: Int, number of neurons
-    - `neighbors`: Int, number of neighbors to connect to each side (node degree = 2*neighbors)
-
-Returns:
-    - 2D array, coupling matrix
-"""
-function ring_coupling(size; neighbors=1)
-    coupling_matrix = zeros(size, size)
-    if size > 2*neighbors
-        correction = -2*neighbors
-    else
-        correction = -size + 1
-    end
-    
-    for i in 1:size
-        if i + neighbors ≤ size && i - neighbors ≥ 1
-            coupling_matrix[i, (i .+ (1:neighbors))] .+= 1
-            coupling_matrix[i, i .- (1:neighbors)] .+= 1
-            coupling_matrix[i, i] = correction
-        else
-            indices = unique([mod(j,1:size) for j in (i .- neighbors):(i .+ neighbors) if j != i])
-            coupling_matrix[i, indices] .+= 1
-            coupling_matrix[i, i] = correction
-        end
-    end
-    return coupling_matrix
-end
-
-
-"""
-Generate a Watts-Strogatz small-world network coupling matrix.
-
-Parameters:
-    - `size`: Int, number of neurons
-    - `neighbors`: Int, number of neighbors to connect initially to each side (node degree = 2*neighbors)
-    - `rewiring_prob`: Float64, probability of rewiring an edge
-
-Returns:
-    - 2D array, coupling matrix
-"""
-function wattsstrogatzmatrix(size, neighbors, rewiring_prob)
-    coupling_matrix = ring_coupling(size; neighbors=neighbors)
-    for i in 1:size
-        for j in i:size
-            if coupling_matrix[i, j] == 1
-                if rand() < rewiring_prob
-                    rand_index = rand(1:size)
-                    while rand_index == i || coupling_matrix[i, rand_index] == 1
-                        rand_index = rand(1:size)
-                    end
-                    coupling_matrix[i, j] = 0
-                    coupling_matrix[j, i] = 0
-                    coupling_matrix[i, rand_index] = 1
-                    coupling_matrix[rand_index, i] = 1
-                end
-            end
-        end
-    end
-    return coupling_matrix
-end
-
-
-"""
-Calculate the standard deviation of the state variables across neurons.
-
-Parameters:
-    - `reshaped_x`: 2D array, reshaped state variables
-
-Returns:
-    - Float64, standard deviation
-"""
-function state_vector_std(reshaped_x)
-    return sqrt(var(reshaped_x[1, :]) + var(reshaped_x[2, :]))
-end
-
-
-function std_time_series(sol)
-    t_values = sol.t
-    x_values = sol.u
-    std_values = zeros(length(t_values))
-    for i in 1:length(t_values)
-        eachneuron = reshape(x_values[i], (2, N))
-        std_values[i] = state_vector_std(eachneuron)
-    end
-    return t_values, std_values
-end
 
 function goal_function(eachneuron)
     goal = 0
@@ -213,20 +81,6 @@ function control_and_goal_time_series(sol, gain, coupling_matrix, coupling_jac)
     return t_values, control_values, goal_values
 end
 
-
-
-function kuramoto_time_series(sol, N)
-    t_values = sol.t
-    x_values = sol.u
-    kuramoto_values = zeros(length(t_values))
-    for i in 1:length(t_values)
-        eachneuron = reshape(x_values[i], (2, N))
-        eachangle = atan.(eachneuron[2, :], eachneuron[1, :])
-        kuramoto = mean(exp.(im .* eachangle))
-        kuramoto_values[i] = abs(kuramoto)
-    end
-    return t_values, kuramoto_values
-end
 
 N = 12
 eps = 0.05
@@ -265,13 +119,7 @@ system_vars = plot(controlled_sol, xlabel="Time", ylabel="System Variables", dpi
 
 uncontrolled_vars = plot(uncontrolled_sol, xlabel="Time", ylabel="System Variables", dpi=600, legend=false)
 
-savefig(observables, "control_observables.png")
-savefig(system_vars, "control_system_vars.png")
-savefig(uncontrolled_vars, "uncontrolled_system_vars.png")
+# savefig(observables, "control_observables.png")
+# savefig(system_vars, "control_system_vars.png")
+# savefig(uncontrolled_vars, "uncontrolled_system_vars.png")
 
-
-# Todo esto está funcionando para acoples tipo anillo, incluso anillos no-locales (vecinos > 1). Para acoples tipo small-world, no funciona. Podría intentar
-# arreglarlo si aplico un control que sincroniza a 2 neuronas particularmente importantes. Según el paper, esto puede sincronizar los sistemas. Como las small-world
-# que tengo son aleatorias, necesitaría pensar un criterio para seleccionar 2 neuronas que me asegure que están directamente conectadas, y poder aplicarle el control
-# sólo a esas. Es novedoso que este método es otra estrategia de control, aparte del pinning control que parece estar más esparcido en la literatura. El hecho de que
-# este método esté funcionando para acoples no locales abre las puertas al control de estados quimera, algo interesante por explorar.

@@ -1,4 +1,4 @@
-from instantaneous_neurons import *
+from python_code.instantaneous_neurons import *
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
