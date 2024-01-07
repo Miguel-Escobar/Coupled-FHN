@@ -7,7 +7,8 @@ dependencies = ["DifferentialEquations",
                 "Plots",
                 "LaTeXStrings",
                 "ProgressMeter",
-                "Peaks"]
+                "Peaks",
+                "Graphs"]
 
 for dep in dependencies
     Pkg.add(dep)

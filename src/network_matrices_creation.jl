@@ -1,3 +1,7 @@
+using Graphs
+using LinearAlgebra
+
+
 function ring_coupling(size; neighbors=1)
     coupling_matrix = zeros(size, size)
     
@@ -22,22 +26,27 @@ function ring_coupling(size; neighbors=1)
 end
 
 function wattsstrogatzmatrix(size, neighbors, rewiring_prob)
-    coupling_matrix = ring_coupling(size; neighbors=neighbors)
-    for i in 1:size
-        for j in i:size
-            if coupling_matrix[i, j] == 1
-                if rand() < rewiring_prob
-                    rand_index = rand(1:size)
-                    while rand_index == i || coupling_matrix[i, rand_index] == 1
-                        rand_index = rand(1:size)
-                    end
-                    coupling_matrix[i, j] = 0
-                    coupling_matrix[j, i] = 0
-                    coupling_matrix[i, rand_index] = 1
-                    coupling_matrix[rand_index, i] = 1
-                end
-            end
-        end
-    end
+    # coupling_matrix = ring_coupling(size; neighbors=neighbors)
+    # for i in 1:size
+    #     for j in i:size
+    #         if coupling_matrix[i, j] == 1
+    #             if rand() < rewiring_prob
+    #                 rand_index = rand(1:size)
+    #                 while rand_index == i || coupling_matrix[i, rand_index] == 1
+    #                     rand_index = rand(1:size)
+    #                 end
+    #                 coupling_matrix[i, j] = 0
+    #                 coupling_matrix[j, i] = 0
+    #                 coupling_matrix[i, rand_index] = 1
+    #                 coupling_matrix[rand_index, i] = 1
+    #             end
+    #         end
+    #     end
+    # end
+
+    g = watts_strogatz(size, 2*neighbors, rewiring_prob)
+    coupling_matrix = adjacency_matrix(g) # Transform into full matrix (not sparse) (will test)
+    coupling_matrix = Matrix(coupling_matrix)
+    coupling_matrix = coupling_matrix - Diagonal(vec(sum(coupling_matrix, dims=2))) # Ensure zero row sum
     return coupling_matrix
 end
