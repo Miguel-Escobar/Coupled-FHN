@@ -1,5 +1,6 @@
 using Graphs
 using LinearAlgebra
+using StaticArrays
 
 
 function ring_coupling(size; neighbors=1)
@@ -22,7 +23,7 @@ function ring_coupling(size; neighbors=1)
             coupling_matrix[i, i] = correction
         end
     end
-    return coupling_matrix
+    return SMatrix{size,size}(coupling_matrix)
 end
 
 function wattsstrogatzmatrix(size, neighbors, rewiring_prob)

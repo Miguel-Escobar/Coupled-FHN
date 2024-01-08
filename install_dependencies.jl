@@ -1,14 +1,15 @@
 using Pkg
 
 dependencies = ["DifferentialEquations",
-                "OrdinaryDiffEq",
+                "OrdinaryDiffEq", # For solver options in msf.jl I think.
                 "StaticArrays",
                 "DynamicalSystems",
                 "Plots",
                 "LaTeXStrings",
                 "ProgressMeter",
                 "Peaks",
-                "Graphs"]
+                "Graphs",
+                "GLMakie"]
 
 for dep in dependencies
     Pkg.add(dep)

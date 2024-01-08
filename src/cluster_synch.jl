@@ -24,7 +24,8 @@ function s_matrix_method(matrix)
     clusters = [] 
     for i in 1:length(s_matrices)
         cluster_indices = findall(x -> isapprox(x, 2; atol=1e-8), s_matrices[i])
-        push!(clusters, cluster_indices)
+        
+        push!(clusters, unique([cluster_indices[i][1] for i in 1:length(cluster_indices)]))
     end
     return eigenvalues, eigenvectors, clusters, s_matrices
 end
