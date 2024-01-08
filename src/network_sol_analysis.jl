@@ -21,7 +21,7 @@ function local_synch_error(sol, neuron_cluster)
     local_synch_error_values = zeros(length(t_values))
     for i in 1:length(t_values)
         eachneuron = reshape(x_values[i], (2, N))
-        local_synch_error_values[i] = state_vector_std(eachneuron[:, neuron_cluster]) # Test for this.
+        local_synch_error_values[i] = state_vector_synch_error(eachneuron[:, neuron_cluster]) # Test for this.
     end
     return t_values, local_synch_error_values
 end
