@@ -1,10 +1,11 @@
 using StaticArrays, LinearAlgebra
 using DynamicalSystems
 using OrdinaryDiffEq
-using Plots, LaTeXStrings
+using LaTeXStrings
+using GLMakie
 using ProgressMeter
 using Base.Threads
-gr()
+using Roots
 
 function fhn_eom(x, params, t)
     a = params[1]
@@ -21,7 +22,6 @@ function fhn_jac(x, params, t)
     dy_dx = 1
     dy_dy = 0
     returnable = SA_F64[dx_dx dx_dy; dy_dx dy_dy] # Revisar con más detalle
-
     return returnable
 end
 
@@ -42,7 +42,7 @@ function msf_eom(xchi, params, t)
 end
 
 function couplingJacobian(phi, eps)
-    return SA[cos(phi)/eps sin(phi)/eps; -sin(phi) cos(phi)]
+    return -SA[cos(phi)/eps sin(phi)/eps; -sin(phi) cos(phi)]
 end
 
 function msf_system(alpha, beta; a=0.5, eps=0.05, coupling=1.0, phi=(pi/2)-0.1, diffeq=(alg=Tsit5(), abstol = 1e-9, reltol = 1e-9))
@@ -56,20 +56,21 @@ function master_stability_function(alpha, beta; testfunc=(state1, d0) -> [state1
 end
 
 function plot_msf_regions(n_rows; kwargs...)
-    alpha_sweep = range(-1.5, 0.5, length=n_rows)
-    beta_sweep = range(-1.5, 1.5, length=n_rows)
+    alpha_sweep = range(-1.5, 1.5, length=n_rows)
+    beta_sweep = range(-0.5, 0.5, length=n_rows)
     msf = zeros(length(alpha_sweep), length(beta_sweep))
 
-    @showprogress for j in 1:length(alpha_sweep)
-        alpha = alpha_sweep[j]
-        Threads.@threads for i in 1:length(beta_sweep)
-            beta = beta_sweep[i]
+    @showprogress for i in 1:length(alpha_sweep)
+        alpha = alpha_sweep[i]
+        Threads.@threads for j in 1:length(beta_sweep)
+            beta = beta_sweep[j]
             msf[i, j] = master_stability_function(alpha, beta; kwargs...)
         end
     end
 
     levels = [-1e10, 0, 1e10]
-
+    println(alpha_sweep)
+    println(beta_sweep)
     p = contour(alpha_sweep, beta_sweep, msf;
                 levels=levels,
                 fill=true,
@@ -93,11 +94,7 @@ function plot_msf_vs_eigs(start, stop, n_points; kwargs...)
     Threads.@threads for i in 1:length(eigenvalue_real_sweep)
         msf_sweep[i] = master_stability_function(eigenvalue_real_sweep[i], 0.0; kwargs...)
     end
-
-    p = plot(eigenvalue_real_sweep, msf_sweep;
-              xlabel="Eigenvalue",
-              ylabel="MSF(Eigenvalue)"
-              )
+    p = lines(eigenvalue_real_sweep, msf_sweep)
     display(p)
 end
 
@@ -155,12 +152,8 @@ function plot_msf_regions_with_eigs(n_rows, coupling_matrix; savefigure=false, k
     end
 end
 
-function get_crit_coupling(coupling_matrix)
-    coupling = 0.01
-    while !synch_is_stable(coupling_matrix; coupling=coupling)
-        coupling += 0.01
-    end
-    return coupling - 0.005
+function msf_zero()
+    return find_zero(alpha -> master_stability_function(alpha, 0.0), 0.2)
 end
 
     

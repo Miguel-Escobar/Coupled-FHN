@@ -2,6 +2,25 @@ using Graphs
 using LinearAlgebra
 using StaticArrays
 
+function test_matrix_for_cluster_synch()
+    [9 -1 -1 -1 -1 -1 -1 -1 -1 -1;
+    -1 9 -1 -1 -1 -1 -1 -1 -1 -1;
+    -1 -1 9 -1 -1 -1 -1 -1 -1 -1;
+    -1 -1 -1 15 -2 -2 -2 -2 -2 -2;
+    -1 -1 -1 -2 15 -2 -2 -2 -2 -2;
+    -1 -1 -1 -2 -2 15 -2 -2 -2 -2;
+    -1 -1 -1 -2 -2 -2 18 -3 -3 -3;
+    -1 -1 -1 -2 -2 -2 -3 18 -3 -3;
+    -1 -1 -1 -2 -2 -2 -3 -3 18 -3;
+    -1 -1 -1 -2 -2 -2 -3 -3 -3 18]
+end
+
+function complete_network(size)
+    coupling_matrix = zeros(size, size)
+    coupling_matrix .= 1
+    coupling_matrix = coupling_matrix - Diagonal(vec(sum(coupling_matrix, dims=2))) # Ensure zero row sum
+    return -coupling_matrix
+end
 
 function ring_coupling(size; neighbors=1)
     coupling_matrix = zeros(size, size)
@@ -23,31 +42,13 @@ function ring_coupling(size; neighbors=1)
             coupling_matrix[i, i] = correction
         end
     end
-    return SMatrix{size,size}(coupling_matrix)
+    return -coupling_matrix
 end
 
 function wattsstrogatzmatrix(size, neighbors, rewiring_prob)
-    # coupling_matrix = ring_coupling(size; neighbors=neighbors)
-    # for i in 1:size
-    #     for j in i:size
-    #         if coupling_matrix[i, j] == 1
-    #             if rand() < rewiring_prob
-    #                 rand_index = rand(1:size)
-    #                 while rand_index == i || coupling_matrix[i, rand_index] == 1
-    #                     rand_index = rand(1:size)
-    #                 end
-    #                 coupling_matrix[i, j] = 0
-    #                 coupling_matrix[j, i] = 0
-    #                 coupling_matrix[i, rand_index] = 1
-    #                 coupling_matrix[rand_index, i] = 1
-    #             end
-    #         end
-    #     end
-    # end
-
     g = watts_strogatz(size, 2*neighbors, rewiring_prob)
     coupling_matrix = adjacency_matrix(g) # Transform into full matrix (not sparse) (will test)
     coupling_matrix = Matrix(coupling_matrix)
     coupling_matrix = coupling_matrix - Diagonal(vec(sum(coupling_matrix, dims=2))) # Ensure zero row sum
-    return coupling_matrix
+    return -coupling_matrix
 end

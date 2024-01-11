@@ -5,7 +5,7 @@ function create_S_matrices(eigenvectors)
     returnable = []
     n_eigvectors = length(eigenvectors[1, :])
     S = zeros(n_eigvectors, n_eigvectors)
-    for i in 1:n_eigvectors
+    for i in reverse(1:n_eigvectors)
         E = zeros(n_eigvectors, n_eigvectors)
         for j in 1:n_eigvectors
             for k in 1:n_eigvectors
@@ -15,7 +15,7 @@ function create_S_matrices(eigenvectors)
         S += E
         push!(returnable, S)
     end
-    return returnable
+    return reverse(returnable)
 end
 
 function s_matrix_method(matrix)
@@ -24,8 +24,7 @@ function s_matrix_method(matrix)
     clusters = [] 
     for i in 1:length(s_matrices)
         cluster_indices = findall(x -> isapprox(x, 2; atol=1e-8), s_matrices[i])
-        
-        push!(clusters, unique([cluster_indices[i][1] for i in 1:length(cluster_indices)]))
+        push!(clusters, sort(unique([cluster_indices[i][1] for i in 1:length(cluster_indices)])))
     end
     return eigenvalues, eigenvectors, clusters, s_matrices
 end

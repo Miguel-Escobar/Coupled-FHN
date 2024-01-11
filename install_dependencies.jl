@@ -9,7 +9,8 @@ dependencies = ["DifferentialEquations",
                 "ProgressMeter",
                 "Peaks",
                 "Graphs",
-                "GLMakie"]
+                "GLMakie",
+                "Roots"]
 
 for dep in dependencies
     Pkg.add(dep)
