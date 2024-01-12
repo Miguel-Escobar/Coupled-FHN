@@ -52,7 +52,7 @@ end
 
 function master_stability_function(alpha, beta; testfunc=(state1, d0) -> [state1[1:2] ; state1[3:end] .- d0/sqrt(4)], kwargs...)
     system = msf_system(alpha, beta; kwargs...)
-    return lyapunov(system, 100.0; Δt = 0.1, Ttr = 100.0, inittest=testfunc, d0=1e-8)
+    return lyapunov(system, 1000.0; Δt = 0.1, Ttr=100.0, inittest=testfunc, d0=1e-9)
 end
 
 function plot_msf_regions(n_rows; kwargs...)

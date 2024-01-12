@@ -1,5 +1,6 @@
 # Following a recipe by A. Bayani et. al.
 using LinearAlgebra
+using Graphs
 
 function create_S_matrices(eigenvectors)
     returnable = []
@@ -21,10 +22,12 @@ end
 function s_matrix_method(matrix)
     eigenvalues, eigenvectors = eigen(matrix)
     s_matrices = create_S_matrices(eigenvectors)
-    clusters = [] 
-    for i in 1:length(s_matrices)
-        cluster_indices = findall(x -> isapprox(x, 2; atol=1e-8), s_matrices[i])
-        push!(clusters, sort(unique([cluster_indices[i][1] for i in 1:length(cluster_indices)])))
+    clusters = []
+    for s_matrix in s_matrices
+        cluster_indices = isapprox.(s_matrix, 2; atol=1e-8)
+        graph = SimpleGraph(cluster_indices)
+        connected_comp = [comp for comp in connected_components(graph) if length(comp) > 1]
+        push!(clusters, connected_comp)
     end
     return eigenvalues, eigenvectors, clusters, s_matrices
 end
