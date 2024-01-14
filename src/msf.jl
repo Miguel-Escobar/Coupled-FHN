@@ -50,7 +50,7 @@ function msf_system(alpha, beta; a=0.5, eps=0.05, coupling=1.0, phi=(pi/2)-0.1, 
     return ds
 end
 
-function master_stability_function(alpha, beta; testfunc=(state1, d0) -> [state1[1:2] ; state1[3:end] .- d0/sqrt(4)], kwargs...)
+function master_stability_function(alpha, beta; testfunc=(state1, d0) -> [state1[1:2] ; state1[3:end] .+ d0/sqrt(4)], kwargs...)
     system = msf_system(alpha, beta; kwargs...)
     return lyapunov(system, 1000.0; Δt = 0.1, Ttr=100.0, inittest=testfunc, d0=1e-9)
 end
