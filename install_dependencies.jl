@@ -10,7 +10,8 @@ dependencies = ["DifferentialEquations",
                 "Peaks",
                 "Graphs",
                 "GLMakie",
-                "Roots"]
+                "Roots",
+                "Einsum"]
 
 for dep in dependencies
     Pkg.add(dep)

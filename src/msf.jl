@@ -25,20 +25,20 @@ function fhn_jac(x, params, t)
     return returnable
 end
 
-function msf_eom(xchi, params, t)
+function msf_eom!(dxchi, xchi, params, t)
     aeps = params[1:2]
     alpha = params[3]
     beta = params[4]
     c = params[5] 
     phi = params[6]
     B = couplingJacobian(phi, aeps[2])
-    x = xchi[1:2]
     chireal = xchi[3:4]
     chiimag = xchi[5:6]
-    dxdy = fhn_eom(x, aeps, t)
-    dchireal = fhn_jac(x, aeps, t) * chireal + c*(alpha*B*chireal - beta*B*chiimag)
-    dchiimag = fhn_jac(x, aeps, t) * chiimag + c*(alpha*B*chiimag + beta*B*chireal)
-    return [dxdy; dchireal; dchiimag]
+    jac = fhn_jac(xchi[1:2], aeps, t)
+    dxchi[1:2] = fhn_eom(xchi[1:2], aeps, t)
+    dxchi[3:4] = jac * chireal .+ c.*(alpha.*B*chireal .- beta.*B*chiimag)
+    dxchi[5:6] = jac * chiimag .+ c.*(alpha.*B*chiimag .+ beta.*B*chireal)
+    return nothing
 end
 
 function couplingJacobian(phi, eps)
@@ -46,7 +46,7 @@ function couplingJacobian(phi, eps)
 end
 
 function msf_system(alpha, beta; a=0.5, eps=0.05, coupling=1.0, phi=(pi/2)-0.1, diffeq=(alg=Tsit5(), abstol = 1e-9, reltol = 1e-9))
-    ds = ContinuousDynamicalSystem(msf_eom, SA[0.0, 0.0, 0.0, 0.0, 0.0, 0.0], SA[a, eps, alpha, beta, coupling, phi], diffeq=diffeq)
+    ds = ContinuousDynamicalSystem(msf_eom!, SA[0.0, 0.0, 0.0, 0.0, 0.0, 0.0], SA[a, eps, alpha, beta, coupling, phi], diffeq=diffeq)
     return ds
 end
 
@@ -77,11 +77,6 @@ function plot_msf_regions(n_rows; kwargs...)
                 xlabel=L"α",
                 ylabel=L"β",
                 zlabel=L"λ",
-                # lw=1,
-                # line_smoothing=0.85,
-                # clabels=true,
-                # cbar=false,
-                # color=:plasma
                 cbar=false
                 )
     display(p)
@@ -128,11 +123,6 @@ function plot_msf_regions_with_eigs(n_rows, coupling_matrix; savefigure=false, k
                 xlabel=L"α",
                 ylabel=L"β",
                 zlabel=L"λ",
-                # lw=1,
-                # line_smoothing=0.85,
-                # clabels=true,
-                # cbar=false,
-                # color=:plasma
                 cbar=false,
                 xlims=(-1.5, 0.5),
                 ylims=(-0.5, 0.5)
@@ -152,8 +142,8 @@ function plot_msf_regions_with_eigs(n_rows, coupling_matrix; savefigure=false, k
     end
 end
 
-function msf_zero()
-    return find_zero(alpha -> master_stability_function(alpha, 0.0), 0.2)
+function msf_zero(kwargs...)
+    return find_zero(alpha -> master_stability_function(alpha, 0.0; kwargs...), 0.2)
 end
 
     

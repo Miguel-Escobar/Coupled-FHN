@@ -1,4 +1,5 @@
 using DSP # For the Hilbert transform.
+using GLMakie
 
 function state_vector_synch_error(reshaped_x)
     return sqrt(var(reshaped_x[1, :]) + var(reshaped_x[2, :]))
@@ -30,6 +31,20 @@ end
 function phase(first_coord)
     phase = angle.(first_coord .+ im .* hilbert(first_coord))
     return phase
+end
+
+# function dynamical_phase(t_vals, x_vals, reference_t, reference_x, period)
+#     for t in t_vals # Pending
+
+function st_plot(sol)
+    t_values = sol.t
+    x_values = sol.u
+    n_neurons = length(x_values[1, :]) ÷ 2
+    u_values = x_values[:, 2 .* (1:n_neurons) .- 1]
+    fig = Figure()
+    ax = Axis(fig[1, 1])
+    heatmap!(ax, t_values, 1:n_neurons, u_values, colormap = :viridis)
+    return fig
 end
 
 function kuramoto_time_series(sol, N)
