@@ -36,15 +36,20 @@ end
 # function dynamical_phase(t_vals, x_vals, reference_t, reference_x, period)
 #     for t in t_vals # Pending
 
-function st_plot(sol)
-    t_values = sol.t
-    x_values = sol.u
-    n_neurons = length(x_values[1, :]) ÷ 2
-    u_values = x_values[:, 2 .* (1:n_neurons) .- 1]
-    fig = Figure()
-    ax = Axis(fig[1, 1])
-    heatmap!(ax, t_values, 1:n_neurons, u_values, colormap = :viridis)
-    return fig
+function st_plot(sol, t_start, t_end; skip_every=5)
+    if sol.t[end] < t_end
+        t_end = sol.t[end]
+    end
+    t_values = sol.t[findfirst(>(t_start), sol.t):skip_every:findfirst(>=(t_end), sol.t)]
+    x_values = sol.u[findfirst(>(t_start), sol.t):skip_every:findfirst(>=(t_end), sol.t)]
+    n_neurons = length(x_values[1]) ÷ 2
+    n_values = range(1, n_neurons, step=1)
+    u_values = zeros(length(t_values), n_neurons)
+    for (i, t) in enumerate(t_values)
+        u_values[i, :] = x_values[i][1:2:end]
+    end
+    heatmap(t_values, 1:n_neurons, u_values)
+
 end
 
 function kuramoto_time_series(sol, N)
