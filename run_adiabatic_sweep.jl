@@ -7,17 +7,11 @@ include("src/msf.jl")
 using Random
 using Trapz
 using GLMakie
-using ProgressBars
+using ProgressMeter
 using BenchmarkTools
 using Base.Threads
 
-N = 10
-eps = 0.05
-a = 0.5
-b = bmatrix(pi/2-0.1, eps)
-G = test_matrix_for_cluster_synch()
-
-function kuramoto_d_step(x_0, σ; t_final=1000.0)
+function kuramoto_d_step(x_0, σ, N, eps, a, b, G; t_final=1000.0)
     prob = ODEProblem((dx, x, params, t) -> coupled_fhn_eom!(dx, x, params[1], params[2], params[3], G, b), x_0, (0.0, t_final), [a, eps, σ])
     sol = solve(prob; dtmax=0.5)
     t_val, kuramoto_val = kuramoto_time_series(sol, N)
@@ -25,43 +19,44 @@ function kuramoto_d_step(x_0, σ; t_final=1000.0)
     return trapz(t_val, kuramoto_val)/t_final, sol.u[end]
 end
 
-function kuramoto_sweep(start, stop, init_x0, N_d)
+function kuramoto_sweep(start, stop, init_x0, N_d, N, eps, a, b, G)
     forward_d_sweep = range(start, stop, length=N_d)
     forward_kuramoto_d_vals = zeros(N_d)
     x_0 = init_x0
     for i in 1:N_d
-        forward_kuramoto_d_vals[i], x_f = kuramoto_d_step(x_0, forward_d_sweep[i])
+        forward_kuramoto_d_vals[i], x_f = kuramoto_d_step(x_0, forward_d_sweep[i], N, eps, a, b, G)
         x_0 = x_f
     end
     return forward_d_sweep, forward_kuramoto_d_vals
 end
 
+N = 150
+eps = 0.05
+a = 0.5
+b = bmatrix(pi/2-0.1, eps)
 
-# x_0 = zeros(2*N) .+ randn(2*N) .* 0.01
-# kuramoto_d_step!(x_0, 0.015)
-# x_0 = zeros(2*N) .+ randn(2*N) .* 0.01
-# @btime kuramoto_d_step!(x_0, 0.015)
+# zero_msf = msf_zero()
+# println("zero_msf = ", zero_msf)
+# println("msf = ", master_stability_function(zero_msf, 0))
+# eigenvalues, eigenvectors, clusters, s_matrices = s_matrix_method(G)
+# eigenvalues = unique(round.(eigenvalues, digits=8))[2:end]
+# critical_couplings = zero_msf./eigenvalues #unique(zero_msf./eigenvalues)[2:end]#
+# println("Critical Couplings: ", critical_couplings)
+# println("Eigenvalues: ", eigenvalues)
 
-zero_msf = msf_zero()
-println("zero_msf = ", zero_msf)
-println("msf = ", master_stability_function(zero_msf, 0))
-eigenvalues, eigenvectors, clusters, s_matrices = s_matrix_method(G)
-eigenvalues = unique(round.(eigenvalues, digits=8))[2:end]
-critical_couplings = zero_msf./eigenvalues #unique(zero_msf./eigenvalues)[2:end]#
-println("Critical Couplings: ", critical_couplings)
-println("Eigenvalues: ", eigenvalues)
-
-N_d = 100
-N_realizations = 100
+N_d = 10
+N_realizations = 10
 forward_avg = zeros(N_d)
 backward_avg = zeros(N_d)
 
-for i in ProgressBar(1:N_realizations)
-    global forward_d_sweep, forward_kuramoto_d = kuramoto_sweep(0.025, 0.005, zeros(2*N) .+ randn(2*N) .* 0.01, N_d)
-    global backward_d_sweep, backward_kuramoto_d = kuramoto_sweep(0.005, 0.025, zeros(2*N) .+ randn(2*N) .* 0.01, N_d)
+@showprogress for i in 1:N_realizations
+    G = wattsstrogatzmatrix(N, 3, 1) #test_matrix_for_cluster_synch()
+    global forward_d_sweep, forward_kuramoto_d = kuramoto_sweep(0.025, 0.005, zeros(2*N) .+ randn(2*N) .* 0.01, N_d, N, eps, a, b, G)
+    global backward_d_sweep, backward_kuramoto_d = kuramoto_sweep(0.005, 0.025, zeros(2*N) .+ randn(2*N) .* 0.01, N_d, N, eps, a, b, G)
     forward_avg .+= forward_kuramoto_d
     backward_avg .+= backward_kuramoto_d
 end
+
 forward_avg ./= N_realizations
 backward_avg ./= N_realizations
 
@@ -79,7 +74,7 @@ ax.ylabel = "Kuramoto Order Parameter"
 scatter!(ax, forward_d_sweep, forward_avg, label="Right to left")
 scatter!(ax, backward_d_sweep, backward_avg, label="Left to right")
 axislegend()
-vlines!(ax, critical_couplings[2:3]; label="Critical Couplings", linewidth=1, color = :red)
+# vlines!(ax, critical_couplings[2:3]; label="Critical Couplings", linewidth=1, color = :red)
 f
 
 
