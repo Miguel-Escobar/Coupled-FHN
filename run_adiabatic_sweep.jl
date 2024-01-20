@@ -23,14 +23,14 @@ function kuramoto_sweep(start, stop, init_x0, N_d, N, eps, a, b, G)
     forward_d_sweep = range(start, stop, length=N_d)
     forward_kuramoto_d_vals = zeros(N_d)
     x_0 = init_x0
-    for i in 1:N_d
+    @showprogress for i in 1:N_d
         forward_kuramoto_d_vals[i], x_f = kuramoto_d_step(x_0, forward_d_sweep[i], N, eps, a, b, G)
         x_0 = x_f
     end
     return forward_d_sweep, forward_kuramoto_d_vals
 end
 
-N = 150
+N = 90
 eps = 0.05
 a = 0.5
 b = bmatrix(pi/2-0.1, eps)
@@ -44,15 +44,17 @@ b = bmatrix(pi/2-0.1, eps)
 # println("Critical Couplings: ", critical_couplings)
 # println("Eigenvalues: ", eigenvalues)
 
-N_d = 10
-N_realizations = 10
+
+N_d = 200
+N_realizations = 30
 forward_avg = zeros(N_d)
 backward_avg = zeros(N_d)
 
-@showprogress for i in 1:N_realizations
+for i in 1:N_realizations
     G = wattsstrogatzmatrix(N, 3, 1) #test_matrix_for_cluster_synch()
-    global forward_d_sweep, forward_kuramoto_d = kuramoto_sweep(0.025, 0.005, zeros(2*N) .+ randn(2*N) .* 0.01, N_d, N, eps, a, b, G)
-    global backward_d_sweep, backward_kuramoto_d = kuramoto_sweep(0.005, 0.025, zeros(2*N) .+ randn(2*N) .* 0.01, N_d, N, eps, a, b, G)
+    println("Realization ", i)
+    global forward_d_sweep, forward_kuramoto_d = kuramoto_sweep(0.25, 0.00, zeros(2*N) .+ randn(2*N) .* 0.01, N_d, N, eps, a, b, G)
+    global backward_d_sweep, backward_kuramoto_d = kuramoto_sweep(0.00, 0.25, zeros(2*N) .+ randn(2*N) .* 0.01, N_d, N, eps, a, b, G)
     forward_avg .+= forward_kuramoto_d
     backward_avg .+= backward_kuramoto_d
 end
@@ -60,21 +62,16 @@ end
 forward_avg ./= N_realizations
 backward_avg ./= N_realizations
 
-# backward_d_sweep = reverse(forward_d_sweep)
-# backward_kuramoto_d_vals = zeros(N_d)
-# init_x_0 = zeros(2*N) .+ randn(2*N) .* 0.01
-# for i in ProgressBar(1:N_d)
-#     backward_kuramoto_d_vals[i], x_0 = kuramoto_d_step!(x_0, backward_d_sweep[i])
-# end
 
 f = Figure(size = (800, 600))
 ax = Axis(f[1, 1])
 ax.xlabel = "Coupling"
 ax.ylabel = "Kuramoto Order Parameter"
-scatter!(ax, forward_d_sweep, forward_avg, label="Right to left")
-scatter!(ax, backward_d_sweep, backward_avg, label="Left to right")
-axislegend()
+scatter!(ax, forward_d_sweep[5:end-5], forward_avg[5:end-5], label="Right to left") # 5000 timesteps for thermalization
+scatter!(ax, backward_d_sweep[5:end-5], backward_avg[5:end-5], label="Left to right")
+axislegend(position=:rb)
 # vlines!(ax, critical_couplings[2:3]; label="Critical Couplings", linewidth=1, color = :red)
 f
 
-
+# save the figure:
+save("coupling_sweep_watts_strogatz_90_neurons_6_neighbours_reconnectionprob_1.png", f)
