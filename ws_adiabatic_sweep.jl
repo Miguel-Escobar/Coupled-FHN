@@ -12,7 +12,7 @@ using BenchmarkTools
 using Base.Threads
 
 function kuramoto_d_step(x_0, σ, N, eps, a, b, G; t_final=1000.0)
-    prob = ODEProblem((dx, x, params, t) -> coupled_fhn_eom!(dx, x, params[1], params[2], params[3], G, b), x_0, (0.0, t_final), [a, eps, σ])
+    prob = ODEProblem((dx, x, params, t) -> coupled_fhn_eom!(dx, x, params[1], params[2], params[3], G, b, N), x_0, (0.0, t_final), [a, eps, σ])
     sol = solve(prob; dtmax=0.5)
     t_val, kuramoto_val = kuramoto_time_series(sol, N)
     #x_0 = sol.u[end]
@@ -45,13 +45,13 @@ b = bmatrix(pi/2-0.1, eps)
 # println("Eigenvalues: ", eigenvalues)
 
 
-N_d = 200
-N_realizations = 30
+N_d = 2
+N_realizations = 1
 forward_avg = zeros(N_d)
 backward_avg = zeros(N_d)
 
 for i in 1:N_realizations
-    G = wattsstrogatzmatrix(N, 3, 1) #test_matrix_for_cluster_synch()
+    local G = wattsstrogatzmatrix(N, 3, 1) #test_matrix_for_cluster_synch()
     println("Realization ", i)
     global forward_d_sweep, forward_kuramoto_d = kuramoto_sweep(0.25, 0.00, zeros(2*N) .+ randn(2*N) .* 0.01, N_d, N, eps, a, b, G)
     global backward_d_sweep, backward_kuramoto_d = kuramoto_sweep(0.00, 0.25, zeros(2*N) .+ randn(2*N) .* 0.01, N_d, N, eps, a, b, G)
@@ -71,7 +71,5 @@ scatter!(ax, forward_d_sweep[5:end-5], forward_avg[5:end-5], label="Right to lef
 scatter!(ax, backward_d_sweep[5:end-5], backward_avg[5:end-5], label="Left to right")
 axislegend(position=:rb)
 # vlines!(ax, critical_couplings[2:3]; label="Critical Couplings", linewidth=1, color = :red)
+# save("coupling_sweep_watts_strogatz_90_neurons_6_neighbours_reconnectionprob_1.png", f)
 f
-
-# save the figure:
-save("coupling_sweep_watts_strogatz_90_neurons_6_neighbours_reconnectionprob_1.png", f)

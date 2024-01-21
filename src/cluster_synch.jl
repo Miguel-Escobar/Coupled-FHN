@@ -31,3 +31,20 @@ function s_matrix_method(matrix)
     end
     return eigenvalues, eigenvectors, clusters, s_matrices
 end
+
+function process_clusters(uni_clusters)
+    returnable = []
+    for (i, cluster) in enumerate(uni_clusters)
+        if isempty(cluster)
+            continue
+        else
+            if i .< length(uni_clusters) && !isempty(uni_clusters[i+1])
+                cluster = setdiff(cluster[1], uni_clusters[i+1][1])
+            else
+                cluster = cluster[1]
+            end
+            push!(returnable, cluster)
+        end
+    end
+    return returnable
+end
