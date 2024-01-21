@@ -74,26 +74,28 @@ println("Critical Couplings: ", critical_couplings)
 println("Eigenvalues: ", eigenvalues)
 
 
-N_d = 200
-N_realizations = 50
-global_forward_avg = zeros(N_d)
-global_backward_avg = zeros(N_d)
-cluster_forward_avg = zeros(N_d, length(unique_clusters))
-cluster_backward_avg = zeros(N_d, length(unique_clusters))
+N_d = 20
+N_realizations = 5
+global_forward = zeros(N_realizations, N_d)
+global_backward = zeros(N_realizations, N_d)
+cluster_forward = zeros(N_realizations, N_d, length(unique_clusters))
+cluster_backward = zeros(N_realizations, N_d, length(unique_clusters))
 
 for i in 1:N_realizations
     local G = test_matrix_for_cluster_synch()
     println("Realization ", i)
     global forward_d_sweep, global_forward_d, cluster_forward_d = cluster_synch_error_sweep(0.025, 0.00, zeros(2*N) .+ randn(2*N) .* 0.01, N_d, N, eps, a, b, G, unique_clusters)
     global backward_d_sweep, global_backward_d, cluster_backward_d = cluster_synch_error_sweep(0.00, 0.025, zeros(2*N) .+ randn(2*N) .* 0.01, N_d, N, eps, a, b, G, unique_clusters)
-    global_forward_avg .+= global_forward_d
-    global_backward_avg .+= global_backward_d
-    cluster_forward_avg .+= cluster_forward_d
-    cluster_backward_avg .+= cluster_backward_d
+    global_forward[i, :] .= global_forward_d
+    global_backward[i, :] .= global_backward_d
+    cluster_forward[i, :, :] .= cluster_forward_d
+    cluster_backward[i, :, :] .= cluster_backward_d
 end
 
-global_forward_avg ./= N_realizations
-global_backward_avg ./= N_realizations
+global_forward_avg = mean(global_forward, dims=1)[1, :]
+global_backward_avg = mean(global_backward, dims=1)[1, :]
+cluster_forward_avg = mean(cluster_forward, dims=1)[1, :, :]
+cluster_backward_avg = mean(cluster_backward, dims=1)[1, :, :]
 
 
 f = Figure(size = (700, 900))
