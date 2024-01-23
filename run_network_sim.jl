@@ -6,7 +6,7 @@ using LaTeXStrings
 using Random
 using BenchmarkTools
 
-N = 100
+N = 90
 eps = 0.05
 a = 0.5
 b = bmatrix(pi/2-0.1, eps)

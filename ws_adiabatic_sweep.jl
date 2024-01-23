@@ -45,8 +45,8 @@ b = bmatrix(pi/2-0.1, eps)
 # println("Eigenvalues: ", eigenvalues)
 
 
-N_d = 2
-N_realizations = 1
+N_d = 200
+N_realizations = 30
 forward_avg = zeros(N_d)
 backward_avg = zeros(N_d)
 

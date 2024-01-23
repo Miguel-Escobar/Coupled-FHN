@@ -1,7 +1,7 @@
 using DifferentialEquations # For later, so that I don't have to import it when I use this code.
 using StaticArrays
 using Statistics
-using Tullio: @einsum, @tullio
+using Tullio: @tullio
 using LoopVectorization
 
 function fhn_eom(x, params)
