@@ -2,7 +2,7 @@ using DifferentialEquations # For later, so that I don't have to import it when 
 using StaticArrays
 using Statistics
 using Tullio: @einsum, @tullio
-
+using LoopVectorization
 
 function fhn_eom(x, params)
     a = params[1]
@@ -16,7 +16,7 @@ function bmatrix(phi, eps)
     return -[cos(phi)/eps sin(phi)/eps; -sin(phi) cos(phi)]
 end
 
-function coupled_fhn_eom!(dx, x, a, eps, coupling_strength, coupling_matrix, b, N)
+function coupled_fhn_eom!(dx::Vector{Float64}, x::Vector{Float64}, a::Float64, eps::Float64, coupling_strength::Float64, coupling_matrix::Matrix{Float64}, b::Matrix{Float64}, N::Int64)
     eachneuron = reshape(x, (2, N))
     coupling_terms = b * eachneuron
     coupling = zeros(Float64, N, 2)
@@ -29,3 +29,5 @@ function coupled_fhn_eom!(dx, x, a, eps, coupling_strength, coupling_matrix, b, 
     end
     nothing
 end
+
+coupled_fhn_eom!(dx::Vector{Float64}, x::Vector{Float64}, a::Float64, eps::Float64, coupling_strength::Float64, coupling_matrix::Matrix{Int64}, b::Matrix{Float64}, N::Int64) = coupled_fhn_eom!(dx, x, a, eps, coupling_strength, convert(Matrix{Float64}, coupling_matrix), b, N)
