@@ -6,6 +6,8 @@ using GLMakie
 using ProgressMeter
 using Base.Threads
 using Roots
+using Plots
+
 
 function fhn_eom(x, params, t)
     a = params[1]
@@ -42,7 +44,7 @@ function msf_eom!(dxchi, xchi, params, t)
 end
 
 function couplingJacobian(phi, eps)
-    return -SA[cos(phi)/eps sin(phi)/eps; -sin(phi) cos(phi)]
+    return -1 .* SA[cos(phi)/eps sin(phi)/eps; -sin(phi) cos(phi)]
 end
 
 function msf_system(alpha, beta; a=0.5, eps=0.05, coupling=1.0, phi=(pi/2)-0.1, diffeq=(alg=Tsit5(), abstol = 1e-9, reltol = 1e-9))
@@ -71,7 +73,7 @@ function plot_msf_regions(n_rows; kwargs...)
     levels = [-1e10, 0, 1e10]
     println(alpha_sweep)
     println(beta_sweep)
-    p = contour(alpha_sweep, beta_sweep, msf;
+    p = Plots.contour(alpha_sweep, beta_sweep, msf;
                 levels=levels,
                 fill=true,
                 xlabel=L"α",
@@ -89,8 +91,8 @@ function plot_msf_vs_eigs(start, stop, n_points; kwargs...)
     Threads.@threads for i in 1:length(eigenvalue_real_sweep)
         msf_sweep[i] = master_stability_function(eigenvalue_real_sweep[i], 0.0; kwargs...)
     end
-    p = lines(eigenvalue_real_sweep, msf_sweep)
-    display(p)
+    p = GLMakie.lines(eigenvalue_real_sweep, msf_sweep)
+    GLMakie.display(p)
 end
 
 function synch_is_stable(coupling_matrix; kwargs...)
@@ -117,7 +119,7 @@ function plot_msf_regions_with_eigs(n_rows, coupling_matrix; savefigure=false, k
     msf_for_eigs = master_stability_function.(real.(eigs), imag.(eigs); kwargs...)
     levels = [-1e10, 0, 1e10]
 
-    p = contour(alpha_sweep, beta_sweep, msf;
+    p = Plots.contour(alpha_sweep, beta_sweep, msf;
                 levels=levels,
                 fill=true,
                 xlabel=L"α",
@@ -127,10 +129,10 @@ function plot_msf_regions_with_eigs(n_rows, coupling_matrix; savefigure=false, k
                 xlims=(-1.5, 0.5),
                 ylims=(-0.5, 0.5)
                 )
-    plot!(p, real.(eigs), imag.(eigs), seriestype=:scatter, color=:red, label="Eigenvalues", dpi=400, aspect_ratio=2)
+    Plots.plot!(p, real.(eigs), imag.(eigs), seriestype=:scatter, color=:red, label="Eigenvalues", dpi=400, aspect_ratio=2)
 
     if savefigure
-        savefig(p, "msf_with_eigs.png")
+        Plots.savefig(p, "msf_with_eigs.png")
     end
     display(p)
     if all(msf_for_eigs .≤ 0)

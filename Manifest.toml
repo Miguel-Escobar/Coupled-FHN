@@ -2,7 +2,7 @@
 
 julia_version = "1.10.0"
 manifest_format = "2.0"
-project_hash = "5b92e1cffb530147d6fc725ad76a8589428b0524"
+project_hash = "3cfdc8525691c947c92853b7c60656bbed4a691f"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "41c37aa88889c171f1300ceac1313c06e891d245"
@@ -585,12 +585,6 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "e3290f2d49e661fbd94046d7e3726ffcb2d41053"
 uuid = "5ae413db-bbd1-5e63-b57d-d24a61df00f5"
 version = "2.2.4+0"
-
-[[deps.Einsum]]
-deps = ["Compat"]
-git-tree-sha1 = "4a6b3eee0161c89700b6c1949feae8b851da5494"
-uuid = "b7d42ee7-0b51-5a75-98ca-779d3107e4c0"
-version = "0.4.1"
 
 [[deps.EnumX]]
 git-tree-sha1 = "bdb1942cd4c45e3c678fd11569d5cccd80976237"
@@ -1187,11 +1181,6 @@ deps = ["Artifacts", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "d986ce2d884d49126836ea94ed5bfb0f12679713"
 uuid = "1d63c593-3942-5779-bab2-d838dc0a180e"
 version = "15.0.7+0"
-
-[[deps.LRUCache]]
-git-tree-sha1 = "5930ef949f30a9a947c69ef6b069c0b1aa27619d"
-uuid = "8ac3fa9e-de4c-5943-b1dc-09c6b5f20637"
-version = "1.6.0"
 
 [[deps.LZO_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -2131,12 +2120,6 @@ version = "0.5.12"
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 version = "0.7.0"
 
-[[deps.SIMD]]
-deps = ["PrecompileTools"]
-git-tree-sha1 = "d8911cc125da009051fb35322415641d02d9e37f"
-uuid = "fdea26ae-647d-5447-a871-4b548cad5224"
-version = "3.4.6"
-
 [[deps.SIMDTypes]]
 git-tree-sha1 = "330289636fb8107c5f32088d2741e9fd7a061a5c"
 uuid = "94e857df-77ce-4151-89e5-788b33177be4"
@@ -2441,24 +2424,6 @@ git-tree-sha1 = "d6415f66f3d89c615929af907fdc6a3e17af0d8c"
 uuid = "7792a7ef-975c-4747-a70f-980b88e8d1da"
 version = "0.5.2"
 
-[[deps.Strided]]
-deps = ["LinearAlgebra", "StridedViews", "TupleTools"]
-git-tree-sha1 = "40c69be0e1b72ee2f42923b7d1ff13e0b04e675c"
-uuid = "5e0ebb24-38b0-5f93-81fe-25c709ecae67"
-version = "2.0.4"
-
-[[deps.StridedViews]]
-deps = ["LinearAlgebra", "PackageExtensionCompat"]
-git-tree-sha1 = "5b765c4e401693ab08981989f74a36a010aa1d8e"
-uuid = "4db3bf67-4bd7-4b4e-b153-31dc3fb37143"
-version = "0.2.2"
-
-    [deps.StridedViews.extensions]
-    StridedViewsCUDAExt = "CUDA"
-
-    [deps.StridedViews.weakdeps]
-    CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
-
 [[deps.StructArrays]]
 deps = ["Adapt", "ConstructionBase", "DataAPI", "GPUArraysCore", "StaticArraysCore", "Tables"]
 git-tree-sha1 = "1b0b1205a56dc288b71b1961d48e351520702e24"
@@ -2518,27 +2483,6 @@ deps = ["LinearAlgebra"]
 git-tree-sha1 = "1feb45f88d133a655e001435632f019a9a1bcdb6"
 uuid = "62fd8b95-f654-4bbd-a8a5-9c27f68ccd50"
 version = "0.1.1"
-
-[[deps.TensorOperations]]
-deps = ["LRUCache", "LinearAlgebra", "PackageExtensionCompat", "Strided", "StridedViews", "TupleTools", "VectorInterface"]
-git-tree-sha1 = "59bcc1e51aa8c7489fa64d4cab0c4b0202edfc0e"
-uuid = "6aa20fa7-93e2-5fca-9bc0-fbd0db3c71a2"
-version = "4.1.0"
-
-    [deps.TensorOperations.extensions]
-    TensorOperationsChainRulesCoreExt = "ChainRulesCore"
-    TensorOperationscuTENSORExt = ["cuTENSOR", "CUDA"]
-
-    [deps.TensorOperations.weakdeps]
-    CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
-    ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-    cuTENSOR = "011b41b2-24ef-40a8-b3eb-fa098493e9e1"
-
-[[deps.Tensors]]
-deps = ["ForwardDiff", "LinearAlgebra", "PrecompileTools", "SIMD", "StaticArrays", "Statistics"]
-git-tree-sha1 = "957f256fb380cad64cae4da39e562ecfb5c3fec9"
-uuid = "48a634ad-e948-5137-8d70-aa71f2a747f4"
-version = "1.16.1"
 
 [[deps.Test]]
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
@@ -2701,12 +2645,6 @@ version = "0.1.3"
 git-tree-sha1 = "ca0969166a028236229f63514992fc073799bb78"
 uuid = "41fe7b60-77ed-43a1-b4f0-825fd5a5650d"
 version = "0.2.0"
-
-[[deps.VectorInterface]]
-deps = ["LinearAlgebra"]
-git-tree-sha1 = "ecc747f33d2cb2c7ae73e1346e1b24e338f96012"
-uuid = "409d34a3-91d5-4945-b6ec-7529ddf182d8"
-version = "0.4.2"
 
 [[deps.VectorizationBase]]
 deps = ["ArrayInterface", "CPUSummary", "HostCPUFeatures", "IfElse", "LayoutPointers", "Libdl", "LinearAlgebra", "SIMDTypes", "Static", "StaticArrayInterface"]
