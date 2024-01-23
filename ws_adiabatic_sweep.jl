@@ -45,22 +45,28 @@ b = bmatrix(pi/2-0.1, eps)
 # println("Eigenvalues: ", eigenvalues)
 
 
-N_d = 200
+N_d = 150
 N_realizations = 30
-forward_avg = zeros(N_d)
-backward_avg = zeros(N_d)
+forward_array = zeros(N_realizations, N_d)
+backward_array = zeros(N_realizations, N_d)
 
 for i in 1:N_realizations
     local G = wattsstrogatzmatrix(N, 3, 1) #test_matrix_for_cluster_synch()
     println("Realization ", i)
     global forward_d_sweep, forward_kuramoto_d = kuramoto_sweep(0.25, 0.00, zeros(2*N) .+ randn(2*N) .* 0.01, N_d, N, eps, a, b, G)
     global backward_d_sweep, backward_kuramoto_d = kuramoto_sweep(0.00, 0.25, zeros(2*N) .+ randn(2*N) .* 0.01, N_d, N, eps, a, b, G)
-    forward_avg .+= forward_kuramoto_d
-    backward_avg .+= backward_kuramoto_d
+    forward_array[i, :] .= forward_kuramoto_d
+    backward_array[i, :] .= backward_kuramoto_d
 end
 
-forward_avg ./= N_realizations
-backward_avg ./= N_realizations
+forward_avg = mean(forward_array, dims=1)[1, :]
+backward_avg = mean(backward_array, dims=1)[1, :]
+
+using Serialization
+serialize("ws_sweep_data/forward_array", global_forward)
+serialize("ws_sweep_data/backward_array", global_backward)
+serialize("ws_sweep_data/forward_d_sweep", forward_d_sweep)
+serialize("ws_sweep_data/backward_d_sweep", backward_d_sweep) # This will do until I write the poster.
 
 
 f = Figure(size = (800, 600))
