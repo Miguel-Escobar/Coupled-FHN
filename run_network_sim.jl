@@ -10,7 +10,7 @@ N = 90
 eps = 0.05
 a = 0.5
 b = bmatrix(pi/2-0.1, eps)
-σ = 0.0506
+σ = 0.06#0.0506
 G = wattsstrogatzmatrix(N, 3, 1) .* 1.0;#0.232)
 
 x_0 = zeros(2*N)
@@ -32,3 +32,4 @@ ax.ylabel = "Kuramoto Order Parameter"
 t_val, kuramoto_val = kuramoto_time_series(sol, N)
 lines!(ax, t_val, kuramoto_val)
 f
+st_plot(sol, 300, 1000;skip_every=5)

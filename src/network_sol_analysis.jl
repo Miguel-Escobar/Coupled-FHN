@@ -1,5 +1,6 @@
 using DSP # For the Hilbert transform.
 using GLMakie
+using Statistics
 
 function state_vector_synch_error(reshaped_x)
     return sqrt(var(reshaped_x[1, :]) + var(reshaped_x[2, :]))
