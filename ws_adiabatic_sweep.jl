@@ -63,8 +63,8 @@ forward_avg = mean(forward_array, dims=1)[1, :]
 backward_avg = mean(backward_array, dims=1)[1, :]
 
 using Serialization
-serialize("ws_sweep_data/forward_array", global_forward)
-serialize("ws_sweep_data/backward_array", global_backward)
+serialize("ws_sweep_data/forward_array", forward_array)
+serialize("ws_sweep_data/backward_array", backward_array)
 serialize("ws_sweep_data/forward_d_sweep", forward_d_sweep)
 serialize("ws_sweep_data/backward_d_sweep", backward_d_sweep) # This will do until I write the poster.
 
