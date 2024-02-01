@@ -52,9 +52,9 @@ function msf_system(alpha, beta; a=0.5, eps=0.05, coupling=1.0, phi=(pi/2)-0.1, 
     return ds
 end
 
-function master_stability_function(alpha, beta; testfunc=(state1, d0) -> [state1[1:2] ; state1[3:end] .+ d0/sqrt(4)], kwargs...)
+function master_stability_function(alpha, beta; testfunc=(state1, d0) -> [state1[1:2] ; state1[3:end] .+ [1, 1, 1, 1] .* d0/sqrt(4)], kwargs...)
     system = msf_system(alpha, beta; kwargs...)
-    return lyapunov(system, 1000.0; Δt = 0.1, Ttr=100.0, inittest=testfunc, d0=1e-9)
+    return lyapunov(system, 1000.0; Δt = 0.2, Ttr=100.0, inittest=testfunc, d0=1e-9)
 end
 
 function plot_msf_regions(n_rows; kwargs...)
@@ -73,9 +73,9 @@ function plot_msf_regions(n_rows; kwargs...)
     levels = [-1e10, 0, 1e10]
     println(alpha_sweep)
     println(beta_sweep)
-    fig = Figure(resolution = (800, 600))
-    ax = Axis(fig, xlabel=L"α", ylabel=L"β", zlabel=L"λ")
-    contour!(ax, alpha_sweep, beta_sweep, msf, levels=levels, fill=true)
+    fig = Figure(size = (600, 600))
+    ax = Axis(fig[1, 1], xlabel=L"α", ylabel=L"β")
+    contourf!(ax, alpha_sweep, beta_sweep, msf, levels=levels)
     display(fig)
 end
 
@@ -86,8 +86,8 @@ function plot_msf_vs_eigs(start, stop, n_points; kwargs...)
     Threads.@threads for i in 1:length(eigenvalue_real_sweep)
         msf_sweep[i] = master_stability_function(eigenvalue_real_sweep[i], 0.0; kwargs...)
     end
-    fig = Figure(resolution = (800, 600))
-    ax = Axis(fig)
+    fig = Figure(size=(800, 600))
+    ax = Axis(fig[1,1])
     lines!(ax, eigenvalue_real_sweep, msf_sweep)
     display(fig)
 end
@@ -135,6 +135,6 @@ function plot_msf_regions_with_eigs(n_rows, coupling_matrix; savefigure=false, k
     end
 end
 
-function msf_zero(kwargs...)
+function msf_zero(;kwargs...)
     return find_zero(alpha -> master_stability_function(alpha, 0.0; kwargs...), 0.2)
 end
