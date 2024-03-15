@@ -1,20 +1,40 @@
 using DSP # For the Hilbert transform.
 using GLMakie
 using Statistics
+using LinearAlgebra
 
 function state_vector_synch_error(reshaped_x)
     return sqrt(var(reshaped_x[1, :]) + var(reshaped_x[2, :]))
+end
+
+function individual_state_vector_synch_error(reshaped_x)
+    avg_pos = mean(reshaped_x, dims=2)
+    individual_error = [norm(reshaped_x[:, i] .- avg_pos) for i in 1:size(reshaped_x, 2)]
+    return individual_error
 end
 
 function synch_error_time_series(sol)
     t_values = sol.t
     x_values = sol.u
     std_values = zeros(length(t_values))
+    N = length(x_values[1]) ÷ 2 # check if breaks
     for i in 1:length(t_values)
         eachneuron = reshape(x_values[i], (2, N))
         std_values[i] = state_vector_synch_error(eachneuron)
     end
     return t_values, std_values
+end
+
+function individual_synch_error_time_series(sol)
+    t_values = sol.t
+    x_values = sol.u
+    N = length(x_values[1]) ÷ 2 # check if breaks
+    error_values = zeros(length(t_values), N)
+    for i in 1:length(t_values)
+        eachneuron = reshape(x_values[i], (2, N))
+        error_values[i, :] .= individual_state_vector_synch_error(eachneuron)
+    end
+    return t_values, error_values
 end
 
 function local_synch_error(sol, neuron_cluster)
