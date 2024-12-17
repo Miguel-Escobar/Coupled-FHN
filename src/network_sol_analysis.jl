@@ -69,7 +69,11 @@ function st_plot(sol, t_start, t_end; skip_every=5)
     for (i, t) in enumerate(t_values)
         u_values[i, :] = x_values[i][1:2:end]
     end
-    heatmap(t_values, 1:n_neurons, u_values)
+    println("Plotting")
+    fig = Figure()
+    ax = Axis(fig[1, 1], xlabel = "Simulation Time", yticks = 1:n_neurons, ytickformat = "Neuron #{:.0f}", title = "Phase-Time Diagram for a Clustered 10-Neuron Network")
+    heatmap!(ax, t_values, 1:n_neurons, u_values)
+    return fig
 
 end
 
