@@ -67,3 +67,17 @@ Osea que en verdad se parece montón a la formulación discreta. Aquí, $u(t) = 
 
 Digamos que estamos simplemente en $RR$, y en la versión discreta. Aquí podemos utilizar elementos de teoría ergódica para definir un exponente que nos caracteriza cómo se porta $u$. La idea es hacer la media ergódica de $ln(norm(J_(U_0)(t)))$ (logaritmo porque podemos separar las multiplicaciones en sumas, luego el $+ ln(u_0)$ lo podemos sacar de lo que estudiamos). Si $F$ nos define un sistema dinámico ergódico (en el sentido de medida), entonces debido al teorema ergódico puntual (el de Birkhoff para los alumbrados) esa media ergódica va a converger a la media en el sentido de medida, $angle.l ln(norm(J_(U_0)(t))) angle.r $. Este número, que nos caracteriza casi seguramente el comportamiento de la norma de la diferencia, se conoce como el *Exponente de Lyapunov* y lo denotamos $lambda$.
 
+= Extensión a $RR^n$ Teorema de Oseledets
+
+Para extender a $RR^n$ notamos que en verdad la gracia es que nos fijamos sólo en la norma del vector $u$. Osea que la dirección permitimos que varíe como quiera. Si el operador de evolución temporal para el sistema dinámico linealizado lo denotamos $H(t, t_0)$ tenemos que si queremos ver el crecimiento de la norma de la perturbación en este sistema dinámico desde un $u_0$ en tiempo $t_0$ a un tiempo $t$, tenemos en verdad que estudiar $norm(u(t)) = sqrt(angle.l u(t)\, u(t) angle.r)$ cierto?. Reemplazando ahí que $u(t) = H(t, t_0) u_0$, y notando que para pasar a su representación en el dual hay que usarla traspuesta, entonces lo que en verdad deseamos estudiar es la matriz $M(t, t_0)= H(t, t_0)^T H(t, t_0)$ y cómo evolucionan sus propiedades. En particular, nos interesarían sus autovalores más grandes cuando $t arrow infinity$. Para esto primero hay que ver qué límites en verdad podrían existir. El teorema de Oseledets nos da la respuesta:
+
+#teorema[Oseledets][Si $M(t)_(t in NN)$ define una sucesión de matrices estadísticamente estacionarias y ergódica (supuestos que se cumplen cuando el proceso original, $U(t)$ es ergódico), el siguiente límite existe:
+$
+  lim_(t arrow infinity) M(t)^(1/(2t)) = P
+$
+
+Donde P es una matriz $N$ dimensional con *autovalores estrictamente positivos*.
+]
+
+Estos autovalores son la medición de crecimiento o decrecimiento de una perturbación que estabamos buscando. Para que coincidan con el sentido que le dimos al exponente de Lyapunov en el caso unidimensional, le tiramos logaritmo y decimos que el espectro de Lyapunov o los exponentes de Lyapunov del systema son los $lambda_k = log(mu_k)$ donde $mu_k$ son los autovalores de la matriz dada por el teorema de Oseledets sobre $M(t)$.
+
