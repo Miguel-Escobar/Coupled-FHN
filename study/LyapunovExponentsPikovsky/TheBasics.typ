@@ -81,3 +81,16 @@ Donde P es una matriz $N$ dimensional con *autovalores estrictamente positivos*.
 
 Estos autovalores son la medición de crecimiento o decrecimiento de una perturbación que estabamos buscando. Para que coincidan con el sentido que le dimos al exponente de Lyapunov en el caso unidimensional, le tiramos logaritmo y decimos que el espectro de Lyapunov o los exponentes de Lyapunov del systema son los $lambda_k = log(mu_k)$ donde $mu_k$ son los autovalores de la matriz dada por el teorema de Oseledets sobre $M(t)$.
 
+= Partimiento de Oseledets
+
+Gracias a la propiedad de hermiticidad de $P$, tenemos que sus autovectores $(bold(v)_i)_(i=1,..., N)$ forman una base ortogonal del espacio de fase. Una perturbación de una trayectoria entonces se puede expresar como $bold(u)_0 = a_i bold(v)_i$, y crecerá de acuerdo al máximo exponente de lyapunov para el cual $a_i$ sea no nulo. Si ordenamos los exponentes de mayor a menor, esto es el $i$ más pequeño tal que $a_i$ sea no nulo. Los i-ésimos subespacios vectoriales anidados definidos por $bold(E)_i = {bold(u) in RR^N| bold(u) = a_mu bold(v)_mu, a_mu = 0 forall mu < i}, mu in {1, ..., N}$ son tales que todos los vectores en $bold(E_i) backslash bold(E_(i+1))$ crecen con exponente $lambda_i$. Este ordenamiento del espalio de fases se conoce como Oseledets Splitting.
+
+#obs[ Es importante notar que el Oseledets Splitting depende fuertemente del punto inicial de la trayectoria. Esto lo hace más complicado de analizar. Sin embargo, el Oseledets Splitting es de hecho covariante para sistemas invertibles discretos.
+
+$
+  bold(v)_k (bold(U)(t + 1)) = J(bold(U)(t)) bold(v)_k (bold(U)(t))
+$
+
+Estas direcciones se conocen como vectores de Lyapunov.
+]
+
