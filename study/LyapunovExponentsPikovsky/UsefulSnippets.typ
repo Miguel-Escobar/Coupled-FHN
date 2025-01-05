@@ -33,6 +33,8 @@
 
 Aparte de los métodos genéricos para encontrar exponentes de lyapunov, existen además métodos específicos para sistemas a tiempo continuo, basados en una descomposición adecuada de las matrices asociadas a nuestro sistema.  No me queda claro si esto se traduce en una ventaja computacional, así que hasta aquí llega mi comentario.
 
+= Errores cerca de degeneracienes
 
+En el libro se estudia el caso de un anillo de osciladores de Rössler, que para ciertos parámetros presenta un único exponente de lyapunov positivo. Además, gracias a la simetría traslacional del sistema, la mayoría de los exponentes vienen de a pares *pendiente: demostrar esto*. Para este caso, el atractor caótico es simplemente una trayectoria sincrónica, luego se dice que los modos de Fourier diagonalizan la ecuación de evolución de las perturbaciones. Yo veo esto como el paso justo antes de la MSF que ya estudiamos. Como resultado, la dinámica de cada modo de fourier está dada por una edo de sólo 3 variables. Cada modo de fourier entonces tiene asociado 3 exponentes de lyapunov, ya que el iscilador de rossler tiene 3 variables. Súper. 
  
 
