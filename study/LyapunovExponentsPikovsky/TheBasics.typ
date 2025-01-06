@@ -91,11 +91,9 @@ Bajo estos supuestos es que los exponentes de lyapunov son casi seguramente inde
 
 Gracias a la propiedad de hermiticidad de $P$, tenemos que sus autovectores $(bold(v)_i)_(i=1,..., N)$ forman una base ortogonal del espacio de fase. Estas direcciones se conocen como vectores de Lyapunov. Una perturbación de una trayectoria entonces se puede expresar como $bold(u)_0 = a_i bold(v)_i$, y crecerá de acuerdo al máximo exponente de lyapunov para el cual $a_i$ sea no nulo. Si ordenamos los exponentes de mayor a menor, esto es el $i$ más pequeño tal que $a_i$ sea no nulo. Los i-ésimos subespacios vectoriales anidados definidos por $bold(E)_i = {bold(u) in RR^N| bold(u) = a_mu bold(v)_mu, a_mu = 0 forall mu < i}, mu in {1, ..., N}$ son tales que todos los vectores en $bold(E_i) backslash bold(E_(i+1))$ crecen con exponente $lambda_i$. Este ordenamiento del espalio de fases se conoce como Oseledets Splitting.
 
-#obs[ Es importante notar que el Oseledets Splitting depende fuertemente del punto inicial de la trayectoria. Esto lo hace más complicado de analizar. Sin embargo, el Oseledets Splitting es de hecho covariante para sistemas invertibles discretos.
+#obs[ Es importante notar que el Oseledets Splitting depende fuertemente del punto inicial de la trayectoria. Esto lo hace más complicado de analizar. Sin embargo, los vectores de Lyapunov acá definidos son de hecho covariantes con respecto a la evolución temporal, hecho que será importante en los siguientes capítulos.
 
 $
   bold(v)_k (bold(U)(t + 1)) = J(bold(U)(t)) bold(v)_k (bold(U)(t))
 $
 ]
-
-
